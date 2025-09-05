@@ -3,72 +3,130 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Track My Subs - Login</title>
+  <title>Login - Subscription Manager</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.js"></script>
   <link rel="stylesheet" href="login.css" />
 </head>
-<body class="antialiased bg-[#0B0F15] text-slate-200 font-[Inter]">
+<body>
   
-  <!-- Topbar -->
-  <header class="sticky top-0 z-30 backdrop-blur-xl bg-[#0B0F15]/70 border-b border-white/10">
-    <div class="h-16 px-4 lg:px-8 flex items-center justify-between gap-3">
-      <!-- Brand -->
-      <div class="flex items-center gap-2">
-        <div class="h-7 w-7 rounded-md bg-white/10 grid place-items-center">
-          <span class="text-xs tracking-tight font-semibold">S</span>
-        </div>
-        <span class="text-[15px] tracking-tight font-semibold">SUBS</span>
-      </div>
-      
-      <!-- Theme toggle -->
-      <button
-        id="themeToggle"
-        class="h-8 w-8 rounded-full bg-gradient-to-br from-white/20 to-white/5 grid place-items-center"
-        title="Toggle theme"
-        onclick="toggleTheme()"
-      >
-        <i data-lucide="moon" class="w-4 h-4 dark-icon"></i>
-        <i data-lucide="sun" class="w-4 h-4 light-icon hidden"></i>
-      </button>
-    </div>
+  <!-- Header -->
+  <header>
+    <!-- Title only -->
+    <h1>Sub</h1>
+    
+    <!-- Home link -->
+    <nav>
+      <a href="homepage.html" class="nav-link">Home</a>
+    </nav>
+    
+    <!-- Theme toggle -->
+    <button
+      id="themeToggle"
+      class="theme-toggle"
+      title="Toggle theme"
+    >
+      <span class="theme-icon dark-icon">🌙</span>
+      <span class="theme-icon light-icon hidden">☀️</span>
+    </button>
   </header>
 
   <!-- Main -->
-  <main class="flex justify-center items-center min-h-[calc(100vh-64px)] px-4">
-    <section class="auth-card w-full max-w-md bg-white/[0.03] border border-white/10 rounded-lg p-6 backdrop-blur-md">
-      <h1 id="formTitle" class="text-xl font-semibold text-center mb-4">Welcome Back 👋</h1>
+  <main class="main-container">
+    <section class="auth-card">
+      <h2 id="formTitle">Welcome Back 👋</h2>
 
-      <div class="tabs flex gap-4 justify-center mb-6">
+      <div class="tabs">
         <button id="signInTab" class="tab active" type="button">Sign In</button>
         <button id="signUpTab" class="tab" type="button">Sign Up</button>
       </div>
 
-      <!-- Sign In -->
-      <form id="signInForm" class="auth-form space-y-3" autocomplete="on">
-        <input id="signin-username" class="field" name="username" placeholder="Username" required />
-        <input id="signin-password" class="field" name="password" type="password" placeholder="Password" required />
-        <button id="signin-btn" type="submit" class="btn btn-primary w-full">Sign In</button>
+      <!-- Sign In Form -->
+      <form id="signInForm" class="auth-form" autocomplete="on">
+        <div class="field-container">
+          <input 
+            id="signin-username" 
+            class="field" 
+            name="username" 
+            placeholder="Username" 
+            required 
+          />
+        </div>
+        
+        <div class="field-container password-container">
+          <input 
+            id="signin-password" 
+            class="field" 
+            name="password" 
+            type="password" 
+            placeholder="Password" 
+            required 
+          />
+          <button 
+            type="button" 
+            class="password-toggle" 
+            onclick="togglePassword('signin-password')"
+            aria-label="Toggle password visibility"
+          >
+            <span class="eye-icon">👁️</span>
+            <span class="eye-off-icon hidden">🙈</span>
+          </button>
+        </div>
+        
+        <div class="remember-me">
+          <input type="checkbox" id="rememberMe" class="remember-checkbox">
+          <label for="rememberMe" class="remember-label">Remember me</label>
+        </div>
+        
+        <button id="signin-btn" type="submit" class="btn btn-primary">Sign In</button>
 
-        <div class="or text-center">or</div>
+        <div class="or">or</div>
 
-        <button id="google-signin" type="button" class="btn btn-google w-full">
-          <img src="https://www.svgrepo.com/show/355037/google.svg" alt="" /> Continue with Google
+        <button id="google-signin" type="button" class="btn btn-google">
+          <img src="https://www.svgrepo.com/show/355037/google.svg" alt="" /> 
+          Continue with Google
         </button>
       </form>
 
-      <!-- Sign Up -->
-      <form id="signUpForm" class="auth-form hidden space-y-3" autocomplete="new-password">
-        <input id="signup-username" class="field" name="new-username" placeholder="Choose username" required />
-        <input id="signup-password" class="field" name="new-password" type="password" placeholder="Choose password" required />
-        <button id="signup-btn" type="submit" class="btn btn-primary w-full">Create Account</button>
+      <!-- Sign Up Form -->
+      <form id="signUpForm" class="auth-form hidden" autocomplete="new-password">
+        <div class="field-container">
+          <input 
+            id="signup-username" 
+            class="field" 
+            name="new-username" 
+            placeholder="Choose username" 
+            required 
+          />
+        </div>
+        
+        <div class="field-container password-container">
+          <input 
+            id="signup-password" 
+            class="field" 
+            name="new-password" 
+            type="password" 
+            placeholder="Choose password" 
+            required 
+          />
+          <button 
+            type="button" 
+            class="password-toggle" 
+            onclick="togglePassword('signup-password')"
+            aria-label="Toggle password visibility"
+          >
+            <span class="eye-icon">👁️</span>
+            <span class="eye-off-icon hidden">🙈</span>
+          </button>
+        </div>
+        
+        <button id="signup-btn" type="submit" class="btn btn-primary">Create Account</button>
 
-        <div class="or text-center">or</div>
+        <div class="or">or</div>
 
-        <button id="google-signup" type="button" class="btn btn-google w-full">
-          <img src="https://www.svgrepo.com/show/355037/google.svg" alt="" /> Continue with Google
+        <button id="google-signup" type="button" class="btn btn-google">
+          <img src="https://www.svgrepo.com/show/355037/google.svg" alt="" /> 
+          Continue with Google
         </button>
       </form>
     </section>
@@ -77,6 +135,6 @@
   <!-- Toast -->
   <div id="popup" class="popup hidden"></div>
 
-  <script src="login.js"> </script>
+  <script src="login.js"></script>
 </body>
 </html>

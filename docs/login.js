@@ -1,144 +1,240 @@
-// ---------- THEME TOGGLE ----------
-let state = { theme: localStorage.getItem("tms_theme") || "dark" };
+// Theme Management
+let state = { 
+  theme: localStorage.getItem("subs_theme") || "dark" 
+};
 
 function toggleTheme() {
   state.theme = state.theme === "dark" ? "light" : "dark";
   applyTheme(state.theme);
-  localStorage.setItem("tms_theme", state.theme);
-  lucide.createIcons(); // refresh icons after toggle
+  localStorage.setItem("subs_theme", state.theme);
 }
 
 function initThemeToggle() {
-  if (!state.theme) state.theme = "dark";
   applyTheme(state.theme);
-  lucide.createIcons(); // render icons on load
 }
 
 function applyTheme(theme) {
   const html = document.documentElement;
+  const body = document.body;
   const darkIcon = document.querySelector(".dark-icon");
   const lightIcon = document.querySelector(".light-icon");
 
   if (theme === "light") {
     html.classList.add("light-theme");
-    darkIcon?.classList.add("hidden");
-    lightIcon?.classList.remove("hidden");
+    body.classList.add("light-theme");
+    if (darkIcon) darkIcon.classList.add("hidden");
+    if (lightIcon) lightIcon.classList.remove("hidden");
   } else {
     html.classList.remove("light-theme");
-    darkIcon?.classList.remove("hidden");
-    lightIcon?.classList.add("hidden");
+    body.classList.remove("light-theme");
+    if (darkIcon) darkIcon.classList.remove("hidden");
+    if (lightIcon) lightIcon.classList.add("hidden");
   }
 }
 
-// ---------- LOGIN / SIGNUP ----------
-document.addEventListener("DOMContentLoaded", () => {
+// Password Toggle Function
+function togglePassword(fieldId) {
+  const field = document.getElementById(fieldId);
+  const container = field.closest('.password-container');
+  const eyeIcon = container.querySelector('.eye-icon');
+  const eyeOffIcon = container.querySelector('.eye-off-icon');
+  
+  if (field.type === 'password') {
+    field.type = 'text';
+    eyeIcon.classList.add('hidden');
+    eyeOffIcon.classList.remove('hidden');
+  } else {
+    field.type = 'password';
+    eyeIcon.classList.remove('hidden');
+    eyeOffIcon.classList.add('hidden');
+  }
+}
+
+// Toast Function
+let popupTimeout = null;
+
+function showPopup(message, duration = 3000) {
+  const popupEl = document.getElementById("popup");
+  clearTimeout(popupTimeout);
+  
+  popupEl.textContent = message;
+  popupEl.classList.add("show");
+  popupEl.classList.remove("hidden");
+  
+  popupTimeout = setTimeout(() => {
+    popupEl.classList.remove("show");
+    popupEl.classList.add("hidden");
+  }, duration);
+}
+
+// Tab Management
+function switchToSignIn() {
   const signInTab = document.getElementById("signInTab");
   const signUpTab = document.getElementById("signUpTab");
   const signInForm = document.getElementById("signInForm");
   const signUpForm = document.getElementById("signUpForm");
   const formTitle = document.getElementById("formTitle");
-  const popupEl = document.getElementById("popup");
 
-  // Toast
-  let popupTimeout = null;
-  function showPopup(message, miliSecond = 3000) {
-    clearTimeout(popupTimeout);
-    popupEl.textContent = message;
-    popupEl.classList.add("show");
-    popupEl.classList.remove("hidden");
-    popupTimeout = setTimeout(() => {
-      popupEl.classList.remove("show");
-      popupEl.classList.add("hidden");
-    }, miliSecond);
+  signInTab.classList.add("active");
+  signUpTab.classList.remove("active");
+  signInForm.classList.remove("hidden");
+  signUpForm.classList.add("hidden");
+  formTitle.textContent = "Welcome Back 👋";
+}
+
+function switchToSignUp() {
+  const signInTab = document.getElementById("signInTab");
+  const signUpTab = document.getElementById("signUpTab");
+  const signInForm = document.getElementById("signInForm");
+  const signUpForm = document.getElementById("signUpForm");
+  const formTitle = document.getElementById("formTitle");
+
+  signUpTab.classList.add("active");
+  signInTab.classList.remove("active");
+  signUpForm.classList.remove("hidden");
+  signInForm.classList.add("hidden");
+  formTitle.textContent = "Create Your Account";
+}
+
+// Remember Me Functions
+function saveRememberMe(username, password) {
+  if (document.getElementById("rememberMe").checked) {
+    localStorage.setItem("rememberedUser", JSON.stringify({
+      username: username,
+      password: password,
+      timestamp: Date.now()
+    }));
+  } else {
+    localStorage.removeItem("rememberedUser");
   }
+}
 
-  // Tabs
-  function switchToSignIn() {
-    signInTab.classList.add("active");
-    signUpTab.classList.remove("active");
-    signInForm.classList.remove("hidden");
-    signUpForm.classList.add("hidden");
-    formTitle.textContent = "Welcome Back 👋";
-  }
-  function switchToSignUp() {
-    signUpTab.classList.add("active");
-    signInTab.classList.remove("active");
-    signUpForm.classList.remove("hidden");
-    signInForm.classList.add("hidden");
-    formTitle.textContent = "Create your account";
-  }
-  signInTab.addEventListener("click", switchToSignIn);
-  signUpTab.addEventListener("click", switchToSignUp);
-
-  // Sign Up
-  signUpForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const username = document.getElementById("signup-username").value.trim();
-    const password = document.getElementById("signup-password").value;
-
-    if (!username || !password) {
-      showPopup("Please fill username & password");
-      return;
-    }
-
+function loadRememberMe() {
+  const remembered = localStorage.getItem("rememberedUser");
+  if (remembered) {
     try {
-      const res = await fetch("http://localhost:3000/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await res.json();
-
-      if (data.msg == "success") {
-        showPopup("Account created! Please sign in.", 1500);
-        setTimeout(() => switchToSignIn(), 1500);
+      const userData = JSON.parse(remembered);
+      // Check if data is less than 30 days old
+      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+      if (Date.now() - userData.timestamp < thirtyDays) {
+        document.getElementById("signin-username").value = userData.username;
+        document.getElementById("signin-password").value = userData.password;
+        document.getElementById("rememberMe").checked = true;
+        return true;
       } else {
-        showPopup(data.message || "Registration failed");
+        // Remove expired data
+        localStorage.removeItem("rememberedUser");
       }
-    } catch (err) {
-      showPopup("Error connecting to server");
-      console.error(err);
+    } catch (e) {
+      localStorage.removeItem("rememberedUser");
     }
-  });
+  }
+  return false;
+}
 
-  // Sign In
-  signInForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const username = document.getElementById("signin-username").value.trim();
-    const password = document.getElementById("signin-password").value;
+// Initialize when DOM is loaded
+document.addEventListener("DOMContentLoaded", () => {
+  // Initialize theme
+  initThemeToggle();
+  
+  // Load remembered credentials
+  loadRememberMe();
 
-    if (!username || !password) {
-      showPopup("Please enter username & password");
-      return;
-    }
+  // Theme toggle button
+  const themeToggle = document.getElementById("themeToggle");
+  if (themeToggle) {
+    themeToggle.addEventListener("click", toggleTheme);
+  }
 
-    try {
-      const res = await fetch("http://localhost:3000/api/Login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await res.json();
+  // Tab buttons
+  const signInTab = document.getElementById("signInTab");
+  const signUpTab = document.getElementById("signUpTab");
+  
+  if (signInTab) signInTab.addEventListener("click", switchToSignIn);
+  if (signUpTab) signUpTab.addEventListener("click", switchToSignUp);
 
-      if (data.msg == "success") {
-        showPopup("Login successful — redirecting...", 1200);
-        setTimeout(() => (window.location.href = "homepage.html"), 1000);
-      } else {
-        showPopup(data.msg || "Invalid username or password");
+  // Sign Up Form
+  const signUpForm = document.getElementById("signUpForm");
+  if (signUpForm) {
+    signUpForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("signup-username").value.trim();
+      const password = document.getElementById("signup-password").value;
+
+      if (!username || !password) {
+        showPopup("Please fill in all fields");
+        return;
       }
-    } catch (err) {
-      showPopup("Error connecting to server");
-      console.error(err);
-    }
-  });
+
+      try {
+        const res = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showPopup("Account created! Please sign in.", 2000);
+          setTimeout(() => switchToSignIn(), 2000);
+          // Clear form
+          document.getElementById("signup-username").value = "";
+          document.getElementById("signup-password").value = "";
+        } else {
+          showPopup(data.message || "Registration failed");
+        }
+      } catch (err) {
+        showPopup("Error connecting to server");
+        console.error(err);
+      }
+    });
+  }
+
+  // Sign In Form
+  const signInForm = document.getElementById("signInForm");
+  if (signInForm) {
+    signInForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("signin-username").value.trim();
+      const password = document.getElementById("signin-password").value;
+
+      if (!username || !password) {
+        showPopup("Please enter username and password");
+        return;
+      }
+
+      // Save credentials if remember me is checked
+      saveRememberMe(username, password);
+
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showPopup("Login successful — redirecting...", 1500);
+          setTimeout(() => {
+            // Redirect to home page
+            window.location.href = "/";
+          }, 1000);
+        } else {
+          showPopup(data.message || "Invalid username or password");
+        }
+      } catch (err) {
+        showPopup("Error connecting to server");
+        console.error(err);
+      }
+    });
+  }
 
   // Google buttons
-  document.querySelectorAll("#google-signin, #google-signup").forEach((b) => {
-    b.addEventListener("click", () => {
-      showPopup("Google sign-in not configured yet.");
+  const googleButtons = document.querySelectorAll("#google-signin, #google-signup");
+  googleButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      showPopup("Google sign-in coming soon!");
     });
   });
-
-  // Init theme + icons
-  initThemeToggle();
 });
