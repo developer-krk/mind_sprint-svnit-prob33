@@ -14,7 +14,7 @@ const mongoURI =process.env.MONGO_URI;
 
 
 app.use(cors({
-  origin: "https://developer-krk.github.io", // frontend URL
+  origin: "https://developer-krk.github.io", 
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
