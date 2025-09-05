@@ -26,6 +26,7 @@ LoginHandler.post("/", async (req, res) => {
     );
 
     res.cookie("auth_token", token, {
+      domain:process.env.Domain ||"developer-krk.github.io",
       httpOnly: true,   
       secure: false,    
       sameSite: "strict",
