@@ -1,0 +1,113 @@
+/* Theme styles */
+.light-theme {
+  /* Light theme overrides */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --border-color: #e2e8f0;
+  --card-bg: #ffffff;
+  --hover-bg: #f1f5f9;
+  --highlight-bg: rgba(14, 165, 233, 0.1);
+  --highlight-border: rgba(14, 165, 233, 0.2);
+}
+
+/* Apply theme variables */
+.light-theme body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.light-theme aside {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+  backdrop-filter: none;
+}
+
+.light-theme header {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+  backdrop-filter: none;
+}
+
+.light-theme .border-white\/10 {
+  border-color: var(--border-color);
+}
+
+.light-theme .bg-white\/\[0\.03\] {
+  background-color: var(--card-bg);
+}
+
+.light-theme .text-slate-400 {
+  color: var(--text-secondary);
+}
+
+.light-theme .hover\:bg-white\/\[0\.04\]:hover {
+  background-color: var(--hover-bg);
+}
+
+.light-theme .hover\:border-white\/20:hover {
+  border-color: var(--highlight-border);
+}
+
+.light-theme #searchInput,
+.light-theme select,
+.light-theme input,
+.light-theme textarea {
+  background-color: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.light-theme .sortBtn,
+.light-theme .bg-white\/5 {
+  background-color: var(--bg-primary);
+}
+
+.light-theme .divide-white\/10 > * {
+  border-color: var(--border-color);
+}
+
+.light-theme .bg-white\/\[0\.02\] {
+  background-color: var(--hover-bg);
+}
+
+/* -------- Improved Sidebar Link Readability in Light Theme -------- */
+.light-theme aside nav a {
+  /* Override Tailwind's semi-transparent slate colors from dark mode */
+  color: #334155 !important;              /* slate-700 */
+}
+
+.light-theme aside nav a i {
+  color: #64748b !important;              /* slate-500/600 look */
+  transition: color .18s ease;
+}
+
+.light-theme aside nav a:hover {
+  background: #f1f5f9 !important;         /* slate-100 */
+  color: #0f172a !important;              /* slate-900 */
+}
+
+.light-theme aside nav a:hover i {
+  color: #0f172a !important;
+}
+
+/* Optional: if you mark an active link with a class (recommended) */
+.light-theme aside nav a.active {
+  background: #e2e8f0 !important;         /* slate-200 */
+  color: #0f172a !important;
+  font-weight: 600;
+}
+.light-theme aside nav a.active i {
+  color: #0f172a !important;
+}
+
+/* Fallback: make the first (dashboard) link look a bit stronger if no active logic */
+.light-theme aside nav a:first-child {
+  font-weight: 500;
+}
+
+/* Transition smoothing */
+body, aside, header, input, select, button, div {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
