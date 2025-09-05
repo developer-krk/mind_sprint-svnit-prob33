@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Subs - Smart Subscription Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+  
+  <!-- Embedded theme styles to ensure proper theme toggling -->
+  <style>
+    /* Theme styles */
+    .light-theme {
+      /* Light theme overrides */
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --border-color: #e2e8f0;
+      --card-bg: #ffffff;
+      --hover-bg: #f1f5f9;
+      --highlight-bg: rgba(14, 165, 233, 0.1);
+      --highlight-border: rgba(14, 165, 233, 0.2);
+    }
+
+    /* Apply theme variables */
+    .light-theme body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+    }
+
+    .light-theme aside,
+    .light-theme .bg-\[\#0B0F15\] {
+      background-color: var(--bg-secondary) !important;
+    }
+
+    .light-theme header,
+    .light-theme .bg-\[\#0B0F15\]\/70 {
+      background-color: var(--bg-secondary) !important;
+      backdrop-filter: blur(16px);
+    }
+
+    .light-theme .text-white {
+      color: var(--text-primary) !important;
+    }
+    
+    .light-theme .text-slate-300 {
+      color: var(--text-secondary) !important;
+    }
+    
+    .light-theme .text-slate-200,
+    .light-theme .text-slate-200\/90 {
+      color: var(--text-primary) !important;
+    }
+    
+    .light-theme .border-white\/10 {
+      border-color: var(--border-color) !important;
+    }
+    
+    .light-theme .bg-white\/\[0\.03\],
+    .light-theme .bg-white\/\[0\.02\] {
+      background-color: var(--card-bg) !important;
+    }
+    
+    .light-theme .bg-\[\#070A0F\] {
+      background-color: #f1f5f9 !important;
+    }
+    
+    .light-theme .hover\:bg-white\/\[0\.05\]:hover {
+      background-color: var(--hover-bg) !important;
+    }
+    
+    /* Fix background for dark elements in light mode */
+    .light-theme .bg-\[\#0B0F15\] {
+      background-color: var(--bg-primary) !important;
+    }
+    
+    /* Transition smoothing */
+    body, aside, header, section, div {
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+  </style>
+</head>
+<body class="antialiased bg-[#0B0F15] text-slate-200 font-[Inter]">
+  <!-- Header/Nav -->
+  <header class="sticky top-0 z-30 backdrop-blur-xl bg-[#0B0F15]/70 border-b border-white/10">
+    <div class="container mx-auto px-4 md:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-2">
+          <div class="h-8 w-8 rounded-md bg-white/10 grid place-items-center">
+            <span class="text-sm tracking-tight font-semibold">S</span>
+          </div>
+          <span class="text-lg tracking-tight font-semibold">SUBS</span>
+        </div>
+        <nav class="hidden md:flex items-center gap-6">
+          <a href="#features" class="text-[14px] text-slate-200/90 hover:text-white transition">Features</a>
+          <a href="#testimonials" class="text-[14px] text-slate-200/90 hover:text-white transition">Testimonials</a>
+          <a href="#faq" class="text-[14px] text-slate-200/90 hover:text-white transition">FAQ</a>
+        </nav>
+        <div class="flex items-center gap-3">
+          <button id="themeToggle" class="h-8 w-8 rounded-full bg-gradient-to-br from-white/20 to-white/5 grid place-items-center" title="Toggle theme">
+            <i data-lucide="moon" class="w-4 h-4 dark-icon"></i>
+            <i data-lucide="sun" class="w-4 h-4 light-icon hidden"></i>
+          </button>
+          
+          <a href="login.html" class="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-white text-[#0B0F15] hover:bg-white/90 text-[13px] font-medium transition">
+            Log in
+          </a>
+          
+          <button id="mobileNavBtn" class="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-md border border-white/10 hover:border-white/20 hover:bg-white/5 transition">
+            <i data-lucide="menu" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Nav Drawer -->
+  <div id="mobileDrawer" class="md:hidden fixed inset-0 z-40 hidden">
+    <div class="absolute inset-0 bg-black/60" id="mobileOverlay"></div>
+    <div class="absolute right-0 top-0 bottom-0 w-64 bg-[#0B0F15] border-l border-white/10 p-5">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-2">
+          <div class="h-8 w-8 rounded-md bg-white/10 grid place-items-center">
+            <span class="text-sm tracking-tight font-semibold">S</span>
+          </div>
+          <span class="text-lg tracking-tight font-semibold">SUBS</span>
+        </div>
+        <button id="mobileClose" class="inline-flex items-center justify-center h-9 w-9 rounded-md border border-white/10 hover:border-white/20 hover:bg-white/5 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <nav class="flex flex-col gap-2">
+        <a href="#features" class="flex items-center gap-3 px-3 py-2 rounded-md text-slate-200/90 hover:text-white hover:bg-white/5 transition">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          <span class="text-[14px]">Features</span>
+        </a>
+        <a href="#testimonials" class="flex items-center gap-3 px-3 py-2 rounded-md text-slate-200/90 hover:text-white hover:bg-white/5 transition">
+          <i data-lucide="quote" class="w-4 h-4"></i>
+          <span class="text-[14px]">Testimonials</span>
+        </a>
+        <a href="#faq" class="flex items-center gap-3 px-3 py-2 rounded-md text-slate-200/90 hover:text-white hover:bg-white/5 transition">
+          <i data-lucide="help-circle" class="w-4 h-4"></i>
+          <span class="text-[14px]">FAQ</span>
+        </a>
+        <div class="border-t border-white/10 my-2 pt-2">
+          <a href="login.html" class="flex items-center gap-3 px-3 py-2 rounded-md text-slate-200/90 hover:text-white hover:bg-white/5 transition">
+            <i data-lucide="log-in" class="w-4 h-4"></i>
+            <span class="text-[14px]">Log in</span>
+          </a>
+        </div>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Hero Section -->
+    <section class="py-16 md:py-24">
+      <div class="container mx-auto px-4 md:px-6 lg:px-8">
+        <div class="max-w-3xl mx-auto text-center">
+          <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white">
+            Take Control of Your <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">Subscriptions</span>
+          </h1>
+          <p class="mt-6 text-xl text-slate-300">
+            Track, manage, and optimize all your recurring payments in one place. Never overpay for forgotten subscriptions again.
+          </p>
+          <div class="mt-8 flex justify-center">
+            <a href="login.html" class="inline-flex items-center gap-2 h-12 px-6 rounded-md bg-white text-[#0B0F15] hover:bg-white/90 text-[15px] font-medium transition">
+              Log in
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-12 bg-white/[0.02]">
+      <div class="container mx-auto px-4 md:px-6 lg:px-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div class="text-center">
+            <div class="text-3xl md:text-4xl font-bold text-white">$240</div>
+            <p class="mt-2 text-sm text-slate-400">Average annual savings</p>
+          </div>
+          <div class="text-center">
+            <div class="text-3xl md:text-4xl font-bold text-white">12+</div>
+            <p class="mt-2 text-sm text-slate-400">Subscriptions managed</p>
+          </div>
+          <div class="text-center">
+            <div class="text-3xl md:text-4xl font-bold text-white">98%</div>
+            <p class="mt-2 text-sm text-slate-400">Customer satisfaction</p>
+          </div>
+          <div class="text-center">
+            <div class="text-3xl md:text-4xl font-bold text-white">5 min</div>
+            <p class="mt-2 text-sm text-slate-400">Quick setup time</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-16 md:py-24">
+      <div class="container mx-auto px-4 md:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+          <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-white">Everything You Need to Manage Subscriptions</h2>
+          <p class="mt-4 text-lg text-slate-300">
+            Our powerful yet simple tools help you track, analyze, and optimize your recurring expenses.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <!-- Feature 1 -->
+          <div class="rounded-lg border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition">
+            <div class="h-12 w-12 rounded-lg bg-blue-400/10 grid place-items-center text-blue-400 mb-4">
+              <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-white">Centralized Dashboard</h3>
+            <p class="mt-2 text-slate-300">
+              View all your subscriptions in one place with a clean, intuitive dashboard that shows upcoming charges.
+            </p>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="rounded-lg border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition">
+            <div class="h-12 w-12 rounded-lg bg-emerald-400/10 grid place-items-center text-emerald-400 mb-4">
+              <i data-lucide="pie-chart" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-white">Spending Analytics</h3>
+            <p class="mt-2 text-slate-300">
+              Visualize your subscription spending with beautiful charts to identify cost-saving opportunities.
+            </p>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="rounded-lg border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition">
+            <div class="h-12 w-12 rounded-lg bg-amber-400/10 grid place-items-center text-amber-400 mb-4">
+              <i data-lucide="bell" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-white">Renewal Reminders</h3>
+            <p class="mt-2 text-slate-300">
+              Never get surprised by a charge again with smart notifications before your subscriptions renew.
+            </p>
+          </div>
+
+          <!-- Feature 4 -->
+          <div class="rounded-lg border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition">
+            <div class="h-12 w-12 rounded-lg bg-rose-400/10 grid place-items-center text-rose-400 mb-4">
+              <i data-lucide="toggle-right" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-white">Pause & Resume</h3>
+            <p class="mt-2 text-slate-300">
+              Easily pause subscriptions you're not using and track potential savings from paused services.
+            </p>
+          </div>
+
+          <!-- Feature 5 -->
+          <div class="rounded-lg border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition">
+            <div class="h-12 w-12 rounded-lg bg-purple-400/10 grid place-items-center text-purple-400 mb-4">
+              <i data-lucide="calendar-days" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-white">Multiple Billing Cycles</h3>
+            <p class="mt-2 text-slate-300">
+              Track weekly, monthly, yearly, or custom billing cycles with accurate next payment predictions.
+            </p>
+          </div>
+
+          <!-- Feature 6 -->
+          <div class="rounded-lg border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition">
+            <div class="h-12 w-12 rounded-lg bg-cyan-400/10 grid place-items-center text-cyan-400 mb-4">
+              <i data-lucide="wallet" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-white">Multiple Currencies</h3>
+            <p class="mt-2 text-slate-300">
+              Support for multiple currencies with automatic conversion to your preferred currency for unified tracking.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section id="testimonials" class="py-16 md:py-24 bg-white/[0.02]">
+      <div class="container mx-auto px-4 md:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+          <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-white">What Our Users Say</h2>
+          <p class="mt-4 text-lg text-slate-300">
+            Join thousands of users who have transformed how they manage their subscriptions.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- Testimonial 1 -->
+          <div class="rounded-lg border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="flex text-amber-400">
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              </div>
+            </div>
+            <p class="text-slate-300 italic">
+              "I was paying for 3 services I didn't even use anymore. Subs helped me identify and cancel them, saving me over $40 per month!"
+            </p>
+            <div class="mt-6 flex items-center gap-3">
+              <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 grid place-items-center text-white text-sm font-medium">
+                JS
+              </div>
+              <div>
+                <div class="text-sm font-semibold text-white">Jamie Smith</div>
+                <div class="text-xs text-slate-400">Software Developer</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Testimonial 2 -->
+          <div class="rounded-lg border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="flex text-amber-400">
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              </div>
+            </div>
+            <p class="text-slate-300 italic">
+              "The analytics feature is incredible. Being able to see exactly where my money goes each month has helped me budget so much better."
+            </p>
+            <div class="mt-6 flex items-center gap-3">
+              <div class="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 grid place-items-center text-white text-sm font-medium">
+                MJ
+              </div>
+              <div>
+                <div class="text-sm font-semibold text-white">Maria Johnson</div>
+                <div class="text-xs text-slate-400">Marketing Director</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Testimonial 3 -->
+          <div class="rounded-lg border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="flex text-amber-400">
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              </div>
+            </div>
+            <p class="text-slate-300 italic">
+              "The reminders before renewal are a lifesaver! I've been able to pause subscriptions when I'm not using them and save hundreds."
+            </p>
+            <div class="mt-6 flex items-center gap-3">
+              <div class="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 grid place-items-center text-white text-sm font-medium">
+                AK
+              </div>
+              <div>
+                <div class="text-sm font-semibold text-white">Alex Kim</div>
+                <div class="text-xs text-slate-400">Entrepreneur</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-16 md:py-24">
+      <div class="container mx-auto px-4 md:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+          <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-white">Frequently Asked Questions</h2>
+          <p class="mt-4 text-lg text-slate-300">
+            Got questions? We've got answers.
+          </p>
+        </div>
+
+        <div class="max-w-3xl mx-auto space-y-6">
+          <!-- FAQ Item -->
+          <div class="rounded-lg border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition">
+            <h3 class="text-lg font-semibold text-white">How does Subs track my subscriptions?</h3>
+            <p class="mt-2 text-slate-300">
+              Subs allows you to manually add and manage your subscriptions. Simply input the details of each subscription and Subs will track renewal dates, send reminders, and analyze your spending.
+            </p>
+          </div>
+
+          <!-- FAQ Item -->
+          <div class="rounded-lg border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition">
+            <h3 class="text-lg font-semibold text-white">Is my financial data secure?</h3>
+            <p class="mt-2 text-slate-300">
+              Absolutely. We use bank-level encryption and never store your actual payment details. Your subscription data is stored securely and we never share it with third parties.
+            </p>
+          </div>
+
+          <!-- FAQ Item -->
+          <div class="rounded-lg border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition">
+            <h3 class="text-lg font-semibold text-white">Can I export my subscription data?</h3>
+            <p class="mt-2 text-slate-300">
+              Yes, you can export all your subscription data in various formats including CSV and JSON for your records or analysis.
+            </p>
+          </div>
+
+          <!-- FAQ Item -->
+          <div class="rounded-lg border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition">
+            <h3 class="text-lg font-semibold text-white">Can I cancel my subscription to Subs?</h3>
+            <p class="mt-2 text-slate-300">
+              Yes, you can cancel your subscription at any time with no questions asked. We'll even help you download your data before you go.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-16 md:py-20 bg-gradient-to-r from-blue-500/10 to-emerald-500/10">
+      <div class="container mx-auto px-4 md:px-6 lg:px-8 text-center">
+        <div class="max-w-3xl mx-auto">
+          <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-white">
+            Ready to Take Control of Your Subscriptions?
+          </h2>
+          <p class="mt-4 text-lg text-slate-300">
+            Join thousands of people saving money and managing their subscriptions smarter.
+          </p>
+          <div class="mt-8 flex justify-center">
+            <a href="login.html" class="inline-flex items-center gap-2 h-12 px-6 rounded-md bg-white text-[#0B0F15] hover:bg-white/90 text-[15px] font-medium transition">
+              Log In
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-[#070A0F] border-t border-white/10">
+    <div class="container mx-auto px-4 md:px-6 lg:px-8 py-12">
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-8">
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <div class="h-8 w-8 rounded-md bg-white/10 grid place-items-center">
+              <span class="text-sm tracking-tight font-semibold">S</span>
+            </div>
+            <span class="text-lg tracking-tight font-semibold">SUBS</span>
+          </div>
+          <p class="text-sm text-slate-400">
+            The smarter way to manage all your subscriptions in one place.
+          </p>
+        </div>
+        
+        <div>
+          <h4 class="text-sm font-semibold text-white mb-4">Resources</h4>
+          <ul class="space-y-2">
+            <li><a href="#features" class="text-sm text-slate-400 hover:text-white transition">Features</a></li>
+            <li><a href="#" class="text-sm text-slate-400 hover:text-white transition">Security</a></li>
+            <li><a href="#" class="text-sm text-slate-400 hover:text-white transition">Blog</a></li>
+            <li><a href="#" class="text-sm text-slate-400 hover:text-white transition">Help Center</a></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 class="text-sm font-semibold text-white mb-4">Legal</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="text-sm text-slate-400 hover:text-white transition">Privacy Policy</a></li>
+            <li><a href="#" class="text-sm text-slate-400 hover:text-white transition">Terms of Service</a></li>
+            <li><a href="#" class="text-sm text-slate-400 hover:text-white transition">Cookie Policy</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="text-sm text-slate-500">
+          &copy; 2025 Subs. All rights reserved.
+        </div>
+        <div class="flex gap-6">
+          <a href="#" class="text-slate-400 hover:text-white transition">
+            <i data-lucide="twitter" class="w-5 h-5"></i>
+            <span class="sr-only">Twitter</span>
+          </a>
+          <a href="#" class="text-slate-400 hover:text-white transition">
+            <i data-lucide="github" class="w-5 h-5"></i>
+            <span class="sr-only">GitHub</span>
+          </a>
+          <a href="#" class="text-slate-400 hover:text-white transition">
+            <i data-lucide="instagram" class="w-5 h-5"></i>
+            <span class="sr-only">Instagram</span>
+          </a>
+          <a href="#" class="text-slate-400 hover:text-white transition">
+            <i data-lucide="linkedin" class="w-5 h-5"></i>
+            <span class="sr-only">LinkedIn</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Script -->
+  <script>
+    // Helper function for querySelector
+    const qs = (s, el = document) => el.querySelector(s);
+    
+    // Theme toggle functionality
+    document.addEventListener("DOMContentLoaded", function() {
+      // Initialize theme from localStorage
+      initTheme();
+      
+      // Theme toggle button
+      const themeToggleBtn = document.getElementById("themeToggle");
+      if (themeToggleBtn) {
+        themeToggleBtn.addEventListener("click", function() {
+          toggleTheme();
+        });
+      }
+      
+      // Mobile navigation
+      const mobileNavBtn = document.getElementById("mobileNavBtn");
+      const mobileDrawer = document.getElementById("mobileDrawer");
+      const mobileClose = document.getElementById("mobileClose");
+      const mobileOverlay = document.getElementById("mobileOverlay");
+      
+      if (mobileNavBtn && mobileDrawer) {
+        mobileNavBtn.addEventListener("click", function() {
+          mobileDrawer.classList.remove("hidden");
+        });
+        
+        if (mobileClose) {
+          mobileClose.addEventListener("click", function() {
+            mobileDrawer.classList.add("hidden");
+          });
+        }
+        
+        if (mobileOverlay) {
+          mobileOverlay.addEventListener("click", function() {
+            mobileDrawer.classList.add("hidden");
+          });
+        }
+      }
+      
+      // Initialize Lucide icons
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons({
+          attrs: {
+            stroke: "currentColor",
+            "stroke-width": 1.5,
+            width: 18,
+            height: 18,
+          },
+        });
+      }
+    });
+    
+    // Fixed theme functions
+    function initTheme() {
+      const savedTheme = localStorage.getItem("subs-theme") || "dark";
+      applyTheme(savedTheme);
+    }
+    
+    function toggleTheme() {
+      const currentTheme = localStorage.getItem("subs-theme") || "dark";
+      const newTheme = currentTheme === "dark" ? "light" : "dark";
+      
+      applyTheme(newTheme);
+      localStorage.setItem("subs-theme", newTheme);
+    }
+    
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      const darkIcon = qs(".dark-icon");
+      const lightIcon = qs(".light-icon");
+
+      if (theme === "light") {
+        html.classList.add("light-theme");
+        // Toggle icon visibility
+        if (darkIcon) darkIcon.classList.add("hidden");
+        if (lightIcon) lightIcon.classList.remove("hidden");
+      } else {
+        html.classList.remove("light-theme");
+        // Toggle icon visibility
+        if (darkIcon) darkIcon.classList.remove("hidden");
+        if (lightIcon) lightIcon.classList.add("hidden");
+      }
+    }
+  </script>
+</body>
+</html>
