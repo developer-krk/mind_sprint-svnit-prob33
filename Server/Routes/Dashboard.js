@@ -1,6 +1,7 @@
 const express = require('express');
 const users = require("../model/Users");
 const subscription = require("../model/subscription");
+const { price } = require('../Controller/CurrencyConverter');
 
 const SubscriptionHandler = express.Router();
 
@@ -11,7 +12,30 @@ SubscriptionHandler.get("/", async (req, res) => {
 
         const subs = await Promise.all(user.subs.map(id => subscription.findById(id)));
 
-        res.json(subs.filter(sub => sub)); 
+        const targetCurrency = req.query.currency || 'USD'; 
+        const convertedSubs = await Promise.all(
+            subs.filter(sub => sub).map(async sub => {
+            if (!sub) return null;
+            try {
+                const convertedPrice = await price(
+                sub.price,
+                sub.currency,
+                targetCurrency
+                );
+                return {
+                ...sub.toObject(),
+                price: convertedPrice,
+                originalCurrency: sub.currency,
+                currency: targetCurrency
+                };
+            } catch (error) {
+                console.error(`Error converting currency for subscription ${sub._id}:`, error);
+                return sub;
+            }
+            })
+        );
+        
+        res.json(convertedSubs.filter(sub => sub));
     } catch (err) {
         console.error("Error fetching subscriptions:", err);
         res.status(500).json({ message: "Failed to fetch subscriptions" });
