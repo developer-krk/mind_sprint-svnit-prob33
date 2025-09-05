@@ -46,5 +46,22 @@ SubscriptionHandler.post("/addSub", async (req, res) => {
         res.status(500).json({ message: "Failed to add subscription" });
     }
 });
+SubscriptionHandler.delete("/:id", async (req, res) => {
+    try {
+        const subId = req.params.id;
+
+        const deletedSub = await subscription.findByIdAndDelete(subId);
+        if (!deletedSub) {
+            return res.status(404).json({ message: "Subscription not found" });
+        }
+
+        await users.findByIdAndUpdate(req.user.id, { $pull: { subs: subId } });
+
+        res.status(200).json({ message: "Subscription deleted successfully" });
+    } catch (err) {
+        console.error("Error deleting subscription:", err);
+        res.status(500).json({ message: "Failed to delete subscription" });
+    }
+});
 
 module.exports = SubscriptionHandler;
