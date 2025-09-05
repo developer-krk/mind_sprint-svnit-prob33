@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Track My Subs - Login</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-inner">
+            <div class="brand">
+                <img src="picture/logo.png" alt="Track My Subs" class="logo-img" />
+                <span class="brand-text">Track My Subs</span>
+            </div>
+
+            <div class="nav-actions">
+                <ul class="nav-links">
+                    <li><a href="#" class="nav-link">About</a></li>
+                    <li><a href="#" class="nav-link">Support</a></li>
+                </ul>
+
+                <div class="theme-wrap" title="Toggle theme">
+                    <label class="switch">
+                        <input type="checkbox" id="themeToggle" />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </nav>
+<!-- MAIN CONTENT -->
+    <main class="main">
+        <section class="auth-card" role="region" aria-labelledby="formTitle">
+            <h1 id="formTitle" class="card-title">Welcome Back 👋</h1>
+
+            <div class="tabs" role="tablist">
+                <button id="signInTab" class="tab active" role="tab" aria-selected="true">Sign In</button>
+                <button id="signUpTab" class="tab" role="tab" aria-selected="false">Sign Up</button>
+            </div>
+
+<!-- SIGN IN -->
+            <form id="signInForm" class="auth-form" autocomplete="on">
+                <input id="signin-username" class="field" name="username" placeholder="Username" required />
+                <input id="signin-password" class="field" name="password" type="password" placeholder="Password"
+                    required />
+                <button id="signin-btn" type="submit" class="btn btn-primary">Sign In</button>
+
+                <div class="or">or</div>
+
+                <button id="google-signin" type="button" class="btn btn-google">
+                    <img src="https://www.svgrepo.com/show/355037/google.svg" alt="" /> Continue with Google
+                </button>
+            </form>
+
+<!-- SIGN UP -->
+            <form id="signUpForm" class="auth-form hidden" autocomplete="new-password">
+                <input id="signup-username" class="field" name="new-username" placeholder="Choose username" required />
+                <input id="signup-password" class="field" name="new-password" type="password"
+                    placeholder="Choose password" required />
+                <button id="signup-btn" type="submit" class="btn btn-primary">Create Account</button>
+
+                <div class="or">or</div>
+
+                <button id="google-signup" type="button" class="btn btn-google">
+                    <img src="https://www.svgrepo.com/show/355037/google.svg" alt="" /> Continue with Google
+                </button>
+            </form>
+        </section>
+    </main>
+
+
+<!-- POP UP -->
+    <div id="popup" class="popup hidden"></div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
