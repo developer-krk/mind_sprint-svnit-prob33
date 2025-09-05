@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const res = await fetch("https://p9sfvw1n-3000.inc1.devtunnels.ms//api/signup", {
+      const res = await fetch("https://p9sfvw1n-3000.inc1.devtunnels.ms/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const res = await fetch("https://p9sfvw1n-3000.inc1.devtunnels.ms//api/login", {
+      const res = await fetch("https://p9sfvw1n-3000.inc1.devtunnels.ms/api/Login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
