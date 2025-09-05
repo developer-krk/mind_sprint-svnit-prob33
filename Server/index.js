@@ -13,11 +13,15 @@ const port = process.env.PORT;
 const mongoURI =process.env.MONGO_URI;
 
 
-app.use(cors({
+const corsOptions = {
   origin: "https://developer-krk.github.io", 
   methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"] 
+};
+
+app.use(cors(corsOptions));
+
 
 app.use(cookieParser())
 app.use(express.json()); 
