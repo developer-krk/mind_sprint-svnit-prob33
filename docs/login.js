@@ -122,7 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (data.msg == "success") {
         showPopup("Login successful — redirecting...", 1200);
-        setTimeout(() => (window.location.href = "index.html"), 1000);
+        setTimeout(() => (window.location.href = "/index.html"), 1000);
       } else {
         showPopup(data.msg || "Invalid username or password");
       }
