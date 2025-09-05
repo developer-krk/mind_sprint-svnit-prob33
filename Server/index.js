@@ -20,9 +20,9 @@ mongoose.connect(mongoURI)
 
 
 
-app.use("/register", RegisterHandler);  
-app.use("/Login",LoginHandler)
-app.get('/',verifyToken, (req, res) => {
+app.use("/api/register", RegisterHandler);  
+app.use("/api/Login",LoginHandler)
+app.get('/api/Dashboard',verifyToken, (req, res) => {
   res.send('Hello World!');
 });
 
