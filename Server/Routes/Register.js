@@ -25,7 +25,7 @@ RegisterHandler.post("/", async (req, res) => {
     });
 
     res.status(201).json({
-      msg: "User registered successfully",
+      msg: "success",
       uid: newUser._id
     });
 

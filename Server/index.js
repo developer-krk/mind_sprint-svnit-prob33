@@ -4,12 +4,20 @@ const RegisterHandler = require('./Routes/Register');
 const cookieParser = require('cookie-parser');
 const verifyToken = require('./Controller/Auth');
 const LoginHandler = require('./Routes/Login');
+const cors = require('cors');
 require('dotenv').config();
 
 
 const app = express();
 const port = process.env.PORT;
 const mongoURI =process.env.MONGO_URI;
+
+
+app.use(cors({
+  origin: "https://developer-krk.github.io", // frontend URL
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 
 app.use(cookieParser())
 app.use(express.json()); 
