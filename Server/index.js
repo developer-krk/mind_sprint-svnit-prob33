@@ -17,10 +17,17 @@ const corsOptions = {
   origin: "https://developer-krk.github.io", 
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"] 
+  allowedHeaders:  ["Content-Type", "Authorization", "Accept"]
 };
 
 app.use(cors(corsOptions));
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "https://developer-krk.github.io");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
+  next();
+});
 
 
 app.use(cookieParser())
