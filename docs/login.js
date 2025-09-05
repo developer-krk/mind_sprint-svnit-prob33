@@ -82,14 +82,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const res = await fetch("/api/signup", {
+      const res = await fetch("https://p9sfvw1n-3000.inc1.devtunnels.ms//api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
       });
       const data = await res.json();
 
-      if (data.success) {
+      if (data.msg == "success") {
         showPopup("Account created! Please sign in.", 1500);
         setTimeout(() => switchToSignIn(), 1500);
       } else {
@@ -113,18 +113,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const res = await fetch("/api/login", {
+      const res = await fetch("https://p9sfvw1n-3000.inc1.devtunnels.ms//api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
       });
       const data = await res.json();
 
-      if (data.success) {
+      if (data.msg == "success") {
         showPopup("Login successful — redirecting...", 1200);
         setTimeout(() => (window.location.href = "index.html"), 1000);
       } else {
-        showPopup(data.message || "Invalid username or password");
+        showPopup(data.msg || "Invalid username or password");
       }
     } catch (err) {
       showPopup("Error connecting to server");

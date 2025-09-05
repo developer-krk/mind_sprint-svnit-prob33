@@ -31,7 +31,7 @@ LoginHandler.post("/", async (req, res) => {
       sameSite: "strict",
     });
 
-    res.json({ msg: "Login successful" });
+    res.json({ msg: "success" });
 
   } catch (err) {
     console.error(err);
