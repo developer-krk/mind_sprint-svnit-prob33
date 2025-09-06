@@ -46,38 +46,55 @@ LoginHandler.post("/", async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        // Cookie configuration for cross-origin (GitHub Pages + localhost)
+        // Cookie configuration for cross-origin (GitHub Pages to localhost)
         const origin = req.headers.origin;
         const isGitHubPages = origin && origin.includes('developer-krk.github.io');
         const isLocalhost = origin && origin.includes('localhost');
         
+        // Fixed cookie configuration for cross-origin
         let cookieOptions = {
             httpOnly: true,
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         };
 
+        // Key fix: For GitHub Pages to localhost, use these specific settings
         if (isGitHubPages) {
-            // GitHub Pages to localhost backend
-            cookieOptions.secure = false; // Set to false for localhost backend
-            cookieOptions.sameSite = 'none'; // Allow cross-origin
-            // Don't set domain for cross-origin cookies
+            cookieOptions = {
+                ...cookieOptions,
+                secure: false,        // MUST be false for localhost backend
+                sameSite: 'none',     // Required for cross-origin
+                // DO NOT set domain for cross-origin cookies
+            };
         } else if (isLocalhost) {
-            // localhost to localhost
-            cookieOptions.secure = false;
-            cookieOptions.sameSite = 'lax';
+            // localhost to localhost (for testing)
+            cookieOptions = {
+                ...cookieOptions,
+                secure: false,
+                sameSite: 'lax',
+                // domain: 'localhost' // Don't set domain
+            };
         } else {
-            // Production settings
-            cookieOptions.secure = true;
-            cookieOptions.sameSite = 'none';
-            if (process.env.CUSTOM_DOMAIN) {
-                cookieOptions.domain = process.env.CUSTOM_DOMAIN;
-            }
+            // Production settings (when both frontend and backend are on same domain)
+            cookieOptions = {
+                ...cookieOptions,
+                secure: true,
+                sameSite: 'strict',
+                domain: process.env.CUSTOM_DOMAIN || undefined
+            };
         }
 
         console.log('🍪 Setting cookie with options:', cookieOptions);
         console.log('🌐 Request origin:', origin);
+        console.log('🔧 User-Agent:', req.headers['user-agent']);
         
+        // Set the cookie
         res.cookie("auth_token", token, cookieOptions);
+
+        // Additional headers for cross-origin compatibility
+        if (isGitHubPages) {
+            res.header('Access-Control-Allow-Credentials', 'true');
+            res.header('Access-Control-Allow-Origin', origin);
+        }
 
         res.json({ 
             success: true, 
@@ -97,7 +114,7 @@ LoginHandler.post("/", async (req, res) => {
     }
 });
 
-// Fixed logout endpoint
+// Fixed logout endpoint with proper cross-origin cookie clearing
 LoginHandler.post("/logout", (req, res) => {
     const origin = req.headers.origin;
     const isGitHubPages = origin && origin.includes('developer-krk.github.io');
@@ -108,19 +125,28 @@ LoginHandler.post("/logout", (req, res) => {
     };
 
     if (isGitHubPages) {
-        cookieOptions.secure = false;
-        cookieOptions.sameSite = 'none';
+        cookieOptions = {
+            ...cookieOptions,
+            secure: false,
+            sameSite: 'none'
+            // DO NOT set domain for cross-origin
+        };
     } else if (isLocalhost) {
-        cookieOptions.secure = false;
-        cookieOptions.sameSite = 'lax';
+        cookieOptions = {
+            ...cookieOptions,
+            secure: false,
+            sameSite: 'lax'
+        };
     } else {
-        cookieOptions.secure = true;
-        cookieOptions.sameSite = 'none';
-        if (process.env.CUSTOM_DOMAIN) {
-            cookieOptions.domain = process.env.CUSTOM_DOMAIN;
-        }
+        cookieOptions = {
+            ...cookieOptions,
+            secure: true,
+            sameSite: 'strict',
+            domain: process.env.CUSTOM_DOMAIN || undefined
+        };
     }
 
+    console.log('🗑️ Clearing cookie with options:', cookieOptions);
     res.clearCookie("auth_token", cookieOptions);
     
     res.json({ 
