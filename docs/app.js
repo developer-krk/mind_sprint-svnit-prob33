@@ -901,7 +901,11 @@ function toast(msg) {
   qs("div", t).textContent = msg;
   t.classList.remove("hidden");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.add("hidden"), 1400);
+  toastTimer = setTimeout(() => { 
+      
+    t.classList.add("hidden")
+        window.location.reload();
+      }, 1400);
 }
 
 // Sorting

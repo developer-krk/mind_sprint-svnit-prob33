@@ -71,31 +71,30 @@ SubscriptionHandler.post("/addSub", async (req, res) => {
             category: [] // Initialize empty array
         });
 
-        // Handle category array
-        if (Array.isArray(body.category) && body.category.length > 0) {
-            const uniqueCategories = [...new Set(body.category.filter(cat => cat && cat.trim()))];
+        // Always process categories (including "Uncategorized")
+        const categoriesToProcess = Array.isArray(body.category) ? body.category : ["Uncategorized"];
+        const uniqueCategories = [...new Set(categoriesToProcess.filter(cat => cat && cat.trim()))];
+        
+        for (const categoryName of uniqueCategories) {
+            const trimmedName = categoryName.trim();
+            let cated = await category.findOne({ name: trimmedName });
             
-            for (const categoryName of uniqueCategories) {
-                const trimmedName = categoryName.trim();
-                let cated = await category.findOne({ name: trimmedName });
-                
-                if (!cated) {
-                    cated = await category.create({
-                        name: trimmedName,
-                        description: "etc",
-                        subscriptions: [sub._id],
-                    });
-                } else {
-                    if (!cated.subscriptions.includes(sub._id)) {
-                        cated.subscriptions.push(sub._id);
-                        await cated.save();
-                    }
+            if (!cated) {
+                cated = await category.create({
+                    name: trimmedName,
+                    description: "etc",
+                    subscriptions: [sub._id],
+                });
+            } else {
+                if (!cated.subscriptions.includes(sub._id)) {
+                    cated.subscriptions.push(sub._id);
+                    await cated.save();
                 }
-                sub.category.push(cated._id);
             }
-            await sub.save();
+            sub.category.push(cated._id);
         }
-         
+        
+        await sub.save();
         await users.findByIdAndUpdate(req.user.id, { $push: { subs: sub._id } });
 
         res.status(201).json({ message: "Subscription added successfully", sub });
@@ -130,64 +129,39 @@ SubscriptionHandler.delete("/:id", async (req, res) => {
         res.status(500).json({ message: "Failed to delete subscription" });
     }
 });
-SubscriptionHandler.patch("/:id", async (req, res) => {
-    try {
-        const subId = req.params.id;
-        const body = req.body;
+// Handle category update
+if (Array.isArray(body.category) || !body.category) {
+    // Remove subscription from old categories
+    if (sub.category && sub.category.length > 0) {
+        await category.updateMany(
+            { _id: { $in: sub.category } },
+            { $pull: { subscriptions: sub._id } }
+        );
+    }
 
-        const sub = await subscription.findById(subId);
-        if (!sub) return res.status(404).json({ message: "Subscription not found" });
+    sub.category = [];
 
-        // Update basic fields dynamically
-        const updatable = [
-            "name", "price", "renewalDate", "currency", "paymentMethod",
-            "status", "accentColor", "Notes", "billingCycle",
-            "customCycle", "customUnit"
-        ];
-        updatable.forEach(field => {
-            if (body[field] !== undefined) sub[field] = body[field];
-        });
-
-        // Handle category update
-        if (Array.isArray(body.category)) {
-            // Remove subscription from old categories
-            if (sub.category && sub.category.length > 0) {
-                await category.updateMany(
-                    { _id: { $in: sub.category } },
-                    { $pull: { subscriptions: sub._id } }
-                );
-            }
-
-            sub.category = [];
-
-            // Process new categories
-            const uniqueCategories = [...new Set(body.category.filter(cat => cat && cat.trim()))];
-            
-            for (const categoryName of uniqueCategories) {
-                const trimmedName = categoryName.trim();
-                let cated = await category.findOne({ name: trimmedName });
-                
-                if (!cated) {
-                    cated = await category.create({
-                        name: trimmedName,
-                        description: "etc",
-                        subscriptions: [sub._id]
-                    });
-                } else {
-                    if (!cated.subscriptions.includes(sub._id)) {
-                        cated.subscriptions.push(sub._id);
-                        await cated.save();
-                    }
-                }
-                sub.category.push(cated._id);
+    // Process new categories (default to "Uncategorized" if empty)
+    const categoriesToProcess = Array.isArray(body.category) ? body.category : ["Uncategorized"];
+    const uniqueCategories = [...new Set(categoriesToProcess.filter(cat => cat && cat.trim()))];
+    
+    for (const categoryName of uniqueCategories) {
+        const trimmedName = categoryName.trim();
+        let cated = await category.findOne({ name: trimmedName });
+        
+        if (!cated) {
+            cated = await category.create({
+                name: trimmedName,
+                description: "etc",
+                subscriptions: [sub._id]
+            });
+        } else {
+            if (!cated.subscriptions.includes(sub._id)) {
+                cated.subscriptions.push(sub._id);
+                await cated.save();
             }
         }
-
-        await sub.save();
-        res.json({ message: "Subscription updated successfully", sub });
-    } catch (err) {
-        console.error("Error updating subscription:", err);
-        res.status(500).json({ message: "Failed to update subscription" });
+        sub.category.push(cated._id);
     }
-});
+}
 module.exports = SubscriptionHandler;
