@@ -209,3 +209,42 @@ body, aside, header, input, select, button, div {
 .user-profile {
     position: relative;
 }
+
+/* Sorting styles */
+.sortable {
+    cursor: pointer;
+    position: relative;
+    padding-right: 20px;
+}
+
+.sortable::after {
+    content: '↕';
+    position: absolute;
+    right: 5px;
+    opacity: 0.3;
+    transition: opacity 0.2s ease;
+}
+
+.sortable.sort-asc::after {
+    content: '↑';
+    opacity: 1;
+}
+
+.sortable.sort-desc::after {
+    content: '↓';
+    opacity: 1;
+}
+
+.sortable:hover::after {
+    opacity: 0.8;
+}
+
+/* Light theme sort indicators */
+.light-theme .sortable::after {
+    color: var(--text-secondary);
+}
+
+.light-theme .sortable.sort-asc::after,
+.light-theme .sortable.sort-desc::after {
+    color: var(--text-primary);
+}
