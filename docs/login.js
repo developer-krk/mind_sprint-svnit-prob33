@@ -226,7 +226,7 @@ credentials: 'include',body: JSON.stringify({ username, password })
           showPopup("Login successful — redirecting...", 1500);
           setTimeout(() => {
             // Redirect to home page
-            window.location.href = "homepage.html";
+            window.location.replace("homepage.html");
           }, 1000);
         } else {
           showPopup(data.msg || "Invalid username or password");

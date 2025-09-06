@@ -62,7 +62,7 @@ LoginHandler.post("/", async (req, res) => {
             cookieOptions = {
                 ...cookieOptions,
                 secure: false,        // MUST be false for localhost backend
-                sameSite: 'none',     // Required for cross-origin
+                sameSite: 'lax',     // Required for cross-origin
                 // DO NOT set domain for cross-origin cookies
             };
         } else if (isLocalhost) {
