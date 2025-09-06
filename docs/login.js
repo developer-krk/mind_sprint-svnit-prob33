@@ -1,4 +1,5 @@
 // Theme Management
+const api_domain = window.api_domain
 let state = { 
   theme: localStorage.getItem("subs_theme") || "dark" 
 };
