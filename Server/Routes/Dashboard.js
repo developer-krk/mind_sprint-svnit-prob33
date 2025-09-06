@@ -11,28 +11,36 @@ SubscriptionHandler.get("/", async (req, res) => {
         const user = await users.findById(req.user.id);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        const subs = await Promise.all(user.subs.map(id => subscription.findById(id)));
+        const subs = await Promise.all(
+            user.subs.map(id => 
+                subscription.findById(id).populate('category', 'name')
+            )
+        );
 
         const targetCurrency = req.query.currency || 'USD'; 
         const convertedSubs = await Promise.all(
             subs.filter(sub => sub).map(async sub => {
-            if (!sub) return null;
-            try {
-                const convertedPrice = await price(
-                sub.price,
-                sub.currency,
-                targetCurrency
-                );
-                return {
-                ...sub.toObject(),
-                price: convertedPrice,
-                originalCurrency: sub.currency,
-                currency: targetCurrency
-                };
-            } catch (error) {
-                console.error(`Error converting currency for subscription ${sub._id}:`, error);
-                return sub;
-            }
+                if (!sub) return null;
+                try {
+                    const convertedPrice = await price(
+                        sub.price,
+                        sub.currency,
+                        targetCurrency
+                    );
+                    return {
+                        ...sub.toObject(),
+                        price: convertedPrice,
+                        originalCurrency: sub.currency,
+                        currency: targetCurrency,
+                        category: sub.category ? sub.category.map(cat => cat.name) : []
+                    };
+                } catch (error) {
+                    console.error(`Error converting currency for subscription ${sub._id}:`, error);
+                    return {
+                        ...sub.toObject(),
+                        category: sub.category ? sub.category.map(cat => cat.name) : []
+                    };
+                }
             })
         );
         
@@ -59,29 +67,34 @@ SubscriptionHandler.post("/addSub", async (req, res) => {
             Notes: body.Notes,
             billingCycle: body.billingCycle || "monthly",
             customCycle: body.customCycle,
-            customUnit: body.customUnit
+            customUnit: body.customUnit,
+            category: [] // Initialize empty array
         });
-        if (Array.isArray(body.category) && body.category.length > 0) {
-    for (const element of body.category) {
-        let cated = await category.findOne({ name: element });
-        if (!cated) {
-            let ncated = await category.create({
-                name: element,
-                description: "etc",
-                subscriptions: [sub._id],
-            });
-            sub.category.push(ncated._id);
-        } else {
-            if (!cated.subscriptions.includes(sub._id)) {
-                cated.subscriptions.push(sub._id);
-                await cated.save();
-            }
-            sub.category.push(cated._id);
-        }
-    }
-}
 
-        await sub.save();
+        // Handle category array
+        if (Array.isArray(body.category) && body.category.length > 0) {
+            const uniqueCategories = [...new Set(body.category.filter(cat => cat && cat.trim()))];
+            
+            for (const categoryName of uniqueCategories) {
+                const trimmedName = categoryName.trim();
+                let cated = await category.findOne({ name: trimmedName });
+                
+                if (!cated) {
+                    cated = await category.create({
+                        name: trimmedName,
+                        description: "etc",
+                        subscriptions: [sub._id],
+                    });
+                } else {
+                    if (!cated.subscriptions.includes(sub._id)) {
+                        cated.subscriptions.push(sub._id);
+                        await cated.save();
+                    }
+                }
+                sub.category.push(cated._id);
+            }
+            await sub.save();
+        }
          
         await users.findByIdAndUpdate(req.user.id, { $push: { subs: sub._id } });
 
@@ -95,11 +108,20 @@ SubscriptionHandler.delete("/:id", async (req, res) => {
     try {
         const subId = req.params.id;
 
-        const deletedSub = await subscription.findByIdAndDelete(subId);
+        const deletedSub = await subscription.findById(subId);
         if (!deletedSub) {
             return res.status(404).json({ message: "Subscription not found" });
         }
 
+        // Remove subscription from categories
+        if (deletedSub.category && deletedSub.category.length > 0) {
+            await category.updateMany(
+                { _id: { $in: deletedSub.category } },
+                { $pull: { subscriptions: subId } }
+            );
+        }
+
+        await subscription.findByIdAndDelete(subId);
         await users.findByIdAndUpdate(req.user.id, { $pull: { subs: subId } });
 
         res.status(200).json({ message: "Subscription deleted successfully" });
@@ -108,7 +130,6 @@ SubscriptionHandler.delete("/:id", async (req, res) => {
         res.status(500).json({ message: "Failed to delete subscription" });
     }
 });
-// PATCH Update Subscription
 SubscriptionHandler.patch("/:id", async (req, res) => {
     try {
         const subId = req.params.id;
@@ -117,7 +138,7 @@ SubscriptionHandler.patch("/:id", async (req, res) => {
         const sub = await subscription.findById(subId);
         if (!sub) return res.status(404).json({ message: "Subscription not found" });
 
-        // --- Update basic fields dynamically ---
+        // Update basic fields dynamically
         const updatable = [
             "name", "price", "renewalDate", "currency", "paymentMethod",
             "status", "accentColor", "Notes", "billingCycle",
@@ -127,35 +148,37 @@ SubscriptionHandler.patch("/:id", async (req, res) => {
             if (body[field] !== undefined) sub[field] = body[field];
         });
 
-        // --- Update category only if provided ---
+        // Handle category update
         if (Array.isArray(body.category)) {
-            // Remove sub from old categories in one go
-            await category.updateMany(
-                { _id: { $in: sub.category } },
-                { $pull: { subscriptions: sub._id } }
-            );
+            // Remove subscription from old categories
+            if (sub.category && sub.category.length > 0) {
+                await category.updateMany(
+                    { _id: { $in: sub.category } },
+                    { $pull: { subscriptions: sub._id } }
+                );
+            }
 
             sub.category = [];
 
-            // Ensure unique category names
-            const uniqueCats = [...new Set(body.category)];
-
-            // Upsert categories efficiently
-            for (const name of uniqueCats) {
-                let cated = await category.findOneAndUpdate(
-                    { name },
-                    { $addToSet: { subscriptions: sub._id } },
-                    { new: true }
-                );
-
+            // Process new categories
+            const uniqueCategories = [...new Set(body.category.filter(cat => cat && cat.trim()))];
+            
+            for (const categoryName of uniqueCategories) {
+                const trimmedName = categoryName.trim();
+                let cated = await category.findOne({ name: trimmedName });
+                
                 if (!cated) {
                     cated = await category.create({
-                        name,
+                        name: trimmedName,
                         description: "etc",
                         subscriptions: [sub._id]
                     });
+                } else {
+                    if (!cated.subscriptions.includes(sub._id)) {
+                        cated.subscriptions.push(sub._id);
+                        await cated.save();
+                    }
                 }
-
                 sub.category.push(cated._id);
             }
         }
@@ -167,5 +190,4 @@ SubscriptionHandler.patch("/:id", async (req, res) => {
         res.status(500).json({ message: "Failed to update subscription" });
     }
 });
-
 module.exports = SubscriptionHandler;

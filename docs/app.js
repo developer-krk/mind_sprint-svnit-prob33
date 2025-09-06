@@ -239,12 +239,13 @@ function transformBackendToFrontend(backendSub) {
     },
     next: formatDateForFrontend(backendSub.renewalDate),
     payment: backendSub.paymentMethod || "Not Specified",
-    category: backendSub.category?.length > 0 ? backendSub.category  : ["Uncategorized"],
- // Assuming single category for now
+    category: Array.isArray(backendSub.category) && backendSub.category.length > 0 
+      ? backendSub.category[0] 
+      : "Uncategorized",
     status: capitalizeStatus(backendSub.status),
     notes: backendSub.Notes || "",
     color: backendSub.accentColor || "#22c55e",
-    reminder: true, // Default to true since backend doesn't have this field yet
+    reminder: true,
   };
 }
 
@@ -257,7 +258,9 @@ function transformFrontendToBackend(frontendSub) {
     renewalDate: frontendSub.next,
     currency: frontendSub.currency,
     paymentMethod: frontendSub.payment,
-    category: frontendSub.category?.length > 0 ? frontendSub.category: ["Uncategorized"],
+    category: frontendSub.category && frontendSub.category.trim() !== "" 
+      ? [frontendSub.category.trim()] 
+      : ["Uncategorized"],
     status: frontendSub.status.toLowerCase(),
     accentColor: frontendSub.color,
     Notes: frontendSub.notes,
@@ -266,7 +269,6 @@ function transformFrontendToBackend(frontendSub) {
     customUnit: billingInfo.customUnit,
   };
 }
-
 function mapBillingCycleToType(billingCycle, customCycle, customUnit) {
   switch (billingCycle) {
     case 'monthly': return 'Monthly';
@@ -468,7 +470,6 @@ function hydrateFilterOptions() {
   catSel.value = currentCat || "";
   paySel.value = currentPay || "";
 }
-
 function renderKPIs(items) {
   const active = items.filter((i) => i.status === "Active");
   const monthly = active.reduce((s, i) => s + monthlyEquivalent(i), 0);
