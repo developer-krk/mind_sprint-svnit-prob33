@@ -239,7 +239,8 @@ function transformBackendToFrontend(backendSub) {
     },
     next: formatDateForFrontend(backendSub.renewalDate),
     payment: backendSub.paymentMethod || "Not Specified",
-    category: backendSub.category?.[0] || "Uncategorized", // Assuming single category for now
+    category: backendSub.category?.length > 0 ? backendSub.category  : ["Uncategorized"],
+ // Assuming single category for now
     status: capitalizeStatus(backendSub.status),
     notes: backendSub.Notes || "",
     color: backendSub.accentColor || "#22c55e",
@@ -256,7 +257,7 @@ function transformFrontendToBackend(frontendSub) {
     renewalDate: frontendSub.next,
     currency: frontendSub.currency,
     paymentMethod: frontendSub.payment,
-    category: frontendSub.category ? [frontendSub.category] : [],
+    category: backendSub.category?.length > 0 ? backendSub.category: ["Uncategorized"],
     status: frontendSub.status.toLowerCase(),
     accentColor: frontendSub.color,
     Notes: frontendSub.notes,
@@ -322,7 +323,7 @@ async function saveSubscription(subscription, isEdit = false) {
     if (isEdit) {
       // Update existing subscription
       await apiRequest(`/api/dashboard/${subscription.id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         body: backendData,
       });
     } else {

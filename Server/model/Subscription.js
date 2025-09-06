@@ -31,7 +31,8 @@ const Subs = new mongoose.Schema({
     },
     category:{
         type:[mongoose.Schema.Types.ObjectId],
-        ref:'category'
+        ref:'category',
+        default:[]
     },
     status:{
         type:String,
