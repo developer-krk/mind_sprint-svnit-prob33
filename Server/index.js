@@ -32,8 +32,8 @@ const corsOptions = {
             'http://localhost:3000',
             'http://localhost:5173',
             'http://localhost:8080',
-            'https://developer-krk.github.io', // Your GitHub Pages domain
-            'https://your-custom-domain.com'
+            'https://developer-krk.github.io',
+            "http://mindsprint-svnit-prob33-production.up.railway.app"
         ];
         
         // Allow requests with no origin (mobile apps, Postman, etc.)
@@ -111,12 +111,7 @@ if (!isProduction) {
 }
 
 // Database connection with better error handling
-mongoose.connect(mongoURI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000,
-})
+mongoose.connect(mongoURI)
 .then(() => {
     console.log("🟢 MongoDB Connected Successfully");
 })
