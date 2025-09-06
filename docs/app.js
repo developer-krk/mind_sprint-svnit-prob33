@@ -185,7 +185,7 @@ async function load() {
   try {
     // Load subscriptions from API
     const currency = localStorage.getItem('preferredCurrency') || 'USD';
-    const subscriptions = await apiRequest(`/dashboard?currency=${currency}`);
+    const subscriptions = await apiRequest(`/api/dashboard?currency=${currency}`);
     
     // Transform backend data to match frontend format
     state.items = subscriptions.map(transformBackendToFrontend);
@@ -295,13 +295,13 @@ async function saveSubscription(subscription, isEdit = false) {
     
     if (isEdit) {
       // Update existing subscription
-      await apiRequest(`/dashboard/${subscription.id}`, {
+      await apiRequest(`/api/dashboard/${subscription.id}`, {
         method: 'PUT',
         body: backendData,
       });
     } else {
       // Create new subscription
-      const response = await apiRequest('/dashboard/addSub', {
+      const response = await apiRequest('/api/dashboard/addSub', {
         method: 'POST',
         body: backendData,
       });
@@ -323,7 +323,7 @@ async function saveSubscription(subscription, isEdit = false) {
 
 async function deleteSubscription(id) {
   try {
-    await apiRequest(`/dashboard/${id}`, {
+    await apiRequest(`/api/dashboard/${id}`, {
       method: 'DELETE',
     });
     
