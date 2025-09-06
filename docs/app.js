@@ -569,8 +569,11 @@ function renderUpcoming(items) {
 }
 
 function renderList(items) {
+  // Apply sorting first
+  const sortedItems = applySort(items);
+  
   const list = qs("#subsList");
-  list.innerHTML = items
+  list.innerHTML = sortedItems
     .map((i) => {
       const next = nextAfter(i);
       const statusClr =
@@ -648,12 +651,26 @@ function renderList(items) {
   iconize();
 
   qsa(".toggleBtn", list).forEach((b) =>
-    b.addEventListener("click", async () => {
+    b.addEventListener("click", async (e) => {
+      e.preventDefault();
       const id = b.getAttribute("data-id");
       const it = state.items.find((x) => x.id === id);
       if (!it) return;
+      
+      // Store original status in case we need to revert
+      const originalStatus = it.status;
       it.status = it.status === "Active" ? "Paused" : "Active";
-      await saveSubscription(it, true);
+      
+      try {
+        await saveSubscription(it, true);
+        toast(`Subscription ${it.status.toLowerCase()}`);
+      } catch (error) {
+        console.error('Failed to toggle subscription:', error);
+        // Revert the status change
+        it.status = originalStatus;
+        toast('Failed to update subscription');
+        render(); // Re-render to show reverted state
+      }
     })
   );
   qsa(".editBtn", list).forEach((b) =>
@@ -756,16 +773,24 @@ function renderCharts(items) {
 function updateGlobalToggles() {
   // reminders toggle
   const g = qs("#globalReminders");
+  if (!g) return; // Safety check
+  
   if (state.reminders) {
     g.classList.add("bg-emerald-400/20", "border-emerald-400/30");
     g.classList.remove("bg-white/10");
-    qs(".dot", g).style.transform = "translateX(20px)";
-    qs(".dot", g).classList.add("bg-emerald-300");
+    const dot = qs(".dot", g);
+    if (dot) {
+      dot.style.transform = "translateX(20px)";
+      dot.classList.add("bg-emerald-300");
+    }
   } else {
     g.classList.remove("bg-emerald-400/20", "border-emerald-400/30");
     g.classList.add("bg-white/10");
-    qs(".dot", g).style.transform = "translateX(2px)";
-    qs(".dot", g).classList.remove("bg-emerald-300");
+    const dot = qs(".dot", g);
+    if (dot) {
+      dot.style.transform = "translateX(2px)";
+      dot.classList.remove("bg-emerald-300");
+    }
   }
 }
 
@@ -780,6 +805,7 @@ function openDrawer(id = null) {
   fillForm(id);
   iconize();
 }
+
 function closeDrawer() {
   qs("#drawer").classList.add("hidden");
 }
@@ -804,8 +830,11 @@ function fillForm(id) {
 }
 
 function setToggle(btn, on) {
+  if (!btn) return; // Safety check
+  
   if (on) {
     btn.classList.add("bg-emerald-400/20", "border-emerald-400/30");
+    btn.classList.remove("bg-white/10");
     const dot = qs(".dot", btn);
     if (dot) {
       dot.style.transform = "translateX(20px)";
@@ -814,6 +843,7 @@ function setToggle(btn, on) {
     btn.dataset.on = "1";
   } else {
     btn.classList.remove("bg-emerald-400/20", "border-emerald-400/30");
+    btn.classList.add("bg-white/10");
     const dot = qs(".dot", btn);
     if (dot) {
       dot.style.transform = "translateX(2px)";
@@ -862,6 +892,7 @@ function escapeHtml(s) {
       ])
   );
 }
+
 function formatDate(d) {
   const dt = d instanceof Date ? d : new Date(d);
   return dt.toLocaleDateString(undefined, {
@@ -870,12 +901,14 @@ function formatDate(d) {
     year: "numeric",
   });
 }
+
 function relative(d) {
   const days = daysBetween(new Date(), d instanceof Date ? d : new Date(d));
   if (days === 0) return "today";
   if (days > 0) return `in ${days}d`;
   return `${Math.abs(days)}d ago`;
 }
+
 function pickColor(key) {
   const palette = [
     "#60a5fa",
@@ -894,21 +927,25 @@ function pickColor(key) {
   return palette[h % palette.length];
 }
 
-// Toast
+// Toast - Fixed to not reload page
 let toastTimer;
 function toast(msg) {
   const t = qs("#toast");
-  qs("div", t).textContent = msg;
+  if (!t) return;
+  
+  const messageDiv = qs("div", t);
+  if (messageDiv) {
+    messageDiv.textContent = msg;
+  }
+  
   t.classList.remove("hidden");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { 
-      
-    t.classList.add("hidden")
-        window.location.reload();
-      }, 1400);
+    t.classList.add("hidden");
+  }, 1400);
 }
 
-// Sorting
+// Sorting - Fixed
 let currentSort = null;
 function applySort(items) {
   if (!currentSort) return items;
@@ -920,7 +957,7 @@ function applySort(items) {
     sorted.sort((a, b) => a.status.localeCompare(b.status));
   if (currentSort === "next")
     sorted.sort(
-      (a, b) => (nextAfter(a) || Infinity) - (nextAfter(b) || Infinity)
+      (a, b) => (nextAfter(a) || new Date('9999-12-31')) - (nextAfter(b) || new Date('9999-12-31'))
     );
   return sorted;
 }
@@ -996,16 +1033,28 @@ window.addEventListener("DOMContentLoaded", async () => {
     e.currentTarget.classList.toggle("bg-emerald-400/10");
     render();
   });
+  
+  // Sorting - Fixed event listeners
   qsa(".sortBtn").forEach((b) =>
     b.addEventListener("click", (e) => {
-      currentSort = e.currentTarget.dataset.sort;
-      qsa(".sortBtn").forEach((x) =>
-        x.classList.remove("border-emerald-400/30", "bg-emerald-400/10")
-      );
-      e.currentTarget.classList.add(
-        "border-emerald-400/30",
-        "bg-emerald-400/10"
-      );
+      const sortType = e.currentTarget.dataset.sort;
+      
+      // Toggle current sort or set new one
+      if (currentSort === sortType) {
+        currentSort = null; // Remove sorting
+        qsa(".sortBtn").forEach((x) =>
+          x.classList.remove("border-emerald-400/30", "bg-emerald-400/10")
+        );
+      } else {
+        currentSort = sortType;
+        qsa(".sortBtn").forEach((x) =>
+          x.classList.remove("border-emerald-400/30", "bg-emerald-400/10")
+        );
+        e.currentTarget.classList.add(
+          "border-emerald-400/30",
+          "bg-emerald-400/10"
+        );
+      }
       render();
     })
   );
@@ -1067,16 +1116,23 @@ window.addEventListener("DOMContentLoaded", async () => {
     toast("All subscriptions resumed");
   });
 
-  // Global settings
+  // Global settings - Fixed currency change to not refresh page
   qs("#currencySelect").addEventListener("change", async (e) => {
     state.currency = e.target.value;
-    await load(); // Reload with new currency conversion
-    await save();
+    // Save currency preference locally
+    localStorage.setItem('preferredCurrency', state.currency);
+    // Re-render with new currency format without reloading data
+    render();
+    toast("Currency updated");
   });
   
+  // Global reminders toggle - Fixed
   qs("#globalReminders").addEventListener("click", async (e) => {
+    e.preventDefault();
     state.reminders = !state.reminders;
-    await save();
+    localStorage.setItem('reminders', state.reminders);
+    updateGlobalToggles();
+    toast(`Reminders ${state.reminders ? 'enabled' : 'disabled'}`);
   });
 
   // Mobile drawer
@@ -1160,12 +1216,6 @@ function applyFiltersAndSort() {
   items = applySort(items);
   return items;
 }
-
-// Ensure sorting applied inside render
-const _renderList = renderList;
-renderList = function (items) {
-  _renderList(applySort(items));
-};
 
 // Helpers
 function cycleToText(c) {
