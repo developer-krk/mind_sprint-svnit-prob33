@@ -168,14 +168,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       try {
-        const res = await fetch(`${api_domain}/api/register`, {
+        const res = await fetch(`${api_domain}/api/auth/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username, password })
         });
         const data = await res.json();
 
-        if (data.msg == "success") {
+        if (data.success) {
           showPopup("Account created! Please sign in.", 2000);
           setTimeout(() => switchToSignIn(), 2000);
           // Clear form
@@ -208,14 +208,14 @@ document.addEventListener("DOMContentLoaded", () => {
       saveRememberMe(username, password);
 
       try {
-        const res = await fetch(`${api_domain}/api/login`, {
+        const res = await fetch(`${api_domain}/api/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username, password })
         });
         const data = await res.json();
 
-        if (data.msg == "success") {
+        if (data.success) {
           showPopup("Login successful — redirecting...", 1500);
           setTimeout(() => {
             // Redirect to home page
