@@ -23,28 +23,33 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false // Allow cross-origin requests
 }));
 
-// CORS configuration
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, Postman, etc.)
+        // Allow requests from your frontend domains
         const allowedOrigins = [
-            "https://developer-krk.github.io",
-            "http://localhost:3000",
-            "http://localhost:3001"
+            'http://localhost:3000',           // React dev server
+            'http://localhost:5173',           // Vite dev server
+            'https://developer-krk.github.io', // GitHub Pages
+            'https://your-custom-domain.com'   // Your custom domain if any
         ];
         
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
+            console.log('🚫 Blocked origin:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-    optionsSuccessStatus: 200
+    credentials: true, // This is crucial for cookies!
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['set-cookie']
 };
 
+// Apply CORS middleware
 app.use(cors(corsOptions));
 
 // Additional CORS headers for better compatibility

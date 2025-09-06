@@ -43,18 +43,36 @@ LoginHandler.post("/", async (req, res) => {
                 username: user.name 
             },
             JWT_SECRET,
-            { expiresIn: '7d' } // Token expires in 7 days
+            { expiresIn: '7d' }
         );
 
-        // Set secure cookie
+        // Fixed cookie configuration
         const isProduction = process.env.NODE_ENV === 'production';
-        res.cookie("auth_token", token, {
-            domain: process.env.DOMAIN || (isProduction ? "developer-krk.github.io" : "localhost"),
-            httpOnly: true,   
-            secure: isProduction, // Only secure in production
-            sameSite: isProduction ? "none" : "lax", // Cross-site cookies in production
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
+        
+        // Cookie options based on environment
+        const cookieOptions = {
+            httpOnly: true,
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        };
+
+        if (isProduction) {
+            // Production settings (for GitHub Pages or similar)
+            cookieOptions.secure = true;
+            cookieOptions.sameSite = 'none';
+            // Don't set domain for GitHub Pages - let browser handle it
+            // Only set domain if you have a custom domain
+            if (process.env.CUSTOM_DOMAIN) {
+                cookieOptions.domain = process.env.CUSTOM_DOMAIN;
+            }
+        } else {
+            // Development settings
+            cookieOptions.secure = false;
+            cookieOptions.sameSite = 'lax';
+            // Don't set domain for localhost
+        }
+
+        console.log('🍪 Setting cookie with options:', cookieOptions);
+        res.cookie("auth_token", token, cookieOptions);
 
         res.json({ 
             success: true, 
@@ -74,15 +92,26 @@ LoginHandler.post("/", async (req, res) => {
     }
 });
 
-// Logout endpoint
+// Fixed logout endpoint
 LoginHandler.post("/logout", (req, res) => {
     const isProduction = process.env.NODE_ENV === 'production';
-    res.clearCookie("auth_token", {
-        domain: process.env.DOMAIN || (isProduction ? "developer-krk.github.io" : "localhost"),
+    
+    const cookieOptions = {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? "none" : "lax"
-    });
+    };
+
+    if (isProduction) {
+        cookieOptions.secure = true;
+        cookieOptions.sameSite = 'none';
+        if (process.env.CUSTOM_DOMAIN) {
+            cookieOptions.domain = process.env.CUSTOM_DOMAIN;
+        }
+    } else {
+        cookieOptions.secure = false;
+        cookieOptions.sameSite = 'lax';
+    }
+
+    res.clearCookie("auth_token", cookieOptions);
     
     res.json({ 
         success: true, 
