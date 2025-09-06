@@ -3,7 +3,11 @@ const JWT_SECRET = process.env.JWT_SECRET || "SVNIT2028";
 
 function verifyToken(req, res, next) {
     try {
-        const token = req.cookies.auth_token;
+        // Check Authorization header instead of cookies
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.startsWith('Bearer ') 
+            ? authHeader.substring(7) 
+            : null;
         
         if (!token) {
             return res.status(401).json({ 
@@ -39,10 +43,14 @@ function verifyToken(req, res, next) {
     }
 }
 
+
 // Optional: Get user info from token
 const getUserFromToken = (req, res) => {
     try {
-        const token = req.cookies.auth_token;
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.startsWith('Bearer ') 
+            ? authHeader.substring(7) 
+            : null;
         
         if (!token) {
             return res.status(401).json({ 

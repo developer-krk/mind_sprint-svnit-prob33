@@ -23,8 +23,68 @@ const API_BASE = window.api_domain || "http://localhost:3000";
 // Authentication token storage (you might want to implement proper auth)
 let authToken = localStorage.getItem('authToken');
 
+// ---------------- AUTH HELPERS ----------------
+function makeAuthenticatedRequest(url, options = {}) {
+  const token = localStorage.getItem('auth_token');
+
+  if (!token) {
+    window.location.replace('login.html');
+    return;
+  }
+
+  const authOptions = {
+    ...options,
+    headers: {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  };
+
+  return fetch(url, authOptions);
+}
+
+async function checkAuth() {
+  const token = localStorage.getItem('auth_token');
+
+  if (!token) {
+    window.location.replace('login.html');
+    return false;
+  }
+
+  try {
+    const response = await makeAuthenticatedRequest(`${API_BASE}/api/user`);
+
+    if (!response.ok) {
+      localStorage.removeItem('auth_token');
+      window.location.replace('login.html');
+      return false;
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+      localStorage.removeItem('auth_token');
+      window.location.replace('login.html');
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Auth check failed:', error);
+    localStorage.removeItem('auth_token');
+    window.location.replace('login.html');
+    return false;
+  }
+}
+
+function logout() {
+  localStorage.removeItem('auth_token');
+  window.location.replace('login.html');
+}
+
 // User dropdown functionality
 document.addEventListener("DOMContentLoaded", function () {
+  
   const userDropdownButton = document.getElementById("userDropdownButton");
   const userDropdown = document.getElementById("userDropdown");
   const logoutButton = document.getElementById("logoutButton");
@@ -50,9 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (logoutButton) {
       logoutButton.addEventListener("click", function (e) {
         e.preventDefault();
-        localStorage.removeItem('authToken');
-        authToken = null;
-        window.location.href = 'login.html';
+        logout()
       });
     }
   }
@@ -868,11 +926,13 @@ function applyTheme(theme) {
 
 // Events
 window.addEventListener("DOMContentLoaded", async () => {
+    await checkAuth();
+
   // Check for auth token
-  if (!authToken) {
-    window.location.href = 'login.html';
-    return;
-  }
+  // if (!authToken) {
+  //   window.location.href = 'login.html';
+  //   return;
+  // }
 
   iconize();
   initThemeToggle();

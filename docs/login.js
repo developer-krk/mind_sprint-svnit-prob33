@@ -223,14 +223,16 @@ credentials: 'include',body: JSON.stringify({ username, password })
         const data = await res.json();
 
         if (data.success) {
-          showPopup("Login successful — redirecting...", 1500);
-          setTimeout(() => {
-            // Redirect to home page
-            window.location.replace("homepage.html");
-          }, 1000);
-        } else {
-          showPopup(data.msg || "Invalid username or password");
-        }
+    // Store token in localStorage
+    localStorage.setItem('auth_token', data.token);
+    
+    showPopup("Login successful — redirecting...", 1500);
+    setTimeout(() => {
+        window.location.replace("dashboard.html"); // or homepage.html
+    }, 1000);
+} else {
+    showPopup(data.msg || "Invalid username or password");
+}
       } catch (err) {
         showPopup("Error connecting to server");
         console.error(err);
