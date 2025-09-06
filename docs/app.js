@@ -17,6 +17,12 @@ if (typeof lucide !== 'undefined') {
   lucide.createIcons();
 }
 
+// API Configuration
+const API_BASE = window.api_domain || "http://localhost:3000";
+
+// Authentication token storage (you might want to implement proper auth)
+let authToken = localStorage.getItem('authToken');
+
 // User dropdown functionality
 document.addEventListener("DOMContentLoaded", function () {
   const userDropdownButton = document.getElementById("userDropdownButton");
@@ -44,10 +50,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (logoutButton) {
       logoutButton.addEventListener("click", function (e) {
         e.preventDefault();
-        // In a real app, you'd perform logout operations here
-        alert("Logout functionality would be implemented here.");
-        // For demo purposes:
-        // window.location.href = 'login.html';
+        localStorage.removeItem('authToken');
+        authToken = null;
+        window.location.href = 'login.html';
       });
     }
   }
@@ -71,96 +76,206 @@ const addWeeks = (d, n) => addDays(d, n * 7);
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 const uid = () => Math.random().toString(36).slice(2, 10);
 
-// Storage
-const LS_KEY = "subs-data-v1";
-const DEFAULTS = {
-  currency: "USD",
-  reminders: true,
-  items: [
-    {
-      id: uid(),
-      name: "Netflix",
-      amount: 15.49,
-      currency: "USD",
-      cycle: { type: "Monthly", interval: 1, unit: "months" },
-      next: offsetDate(5),
-      payment: "Visa •••• 4242",
-      category: "Entertainment",
-      status: "Active",
-      reminder: true,
-      color: "#ef4444",
-      notes: "4K plan",
+// API Helper Functions
+async function apiRequest(endpoint, options = {}) {
+  const url = `${API_BASE}${endpoint}`;
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
+      ...options.headers,
     },
-    {
-      id: uid(),
-      name: "Spotify",
-      amount: 9.99,
-      currency: "USD",
-      cycle: { type: "Monthly", interval: 1, unit: "months" },
-      next: offsetDate(12),
-      payment: "Apple Pay",
-      category: "Music",
-      status: "Active",
-      reminder: true,
-      color: "#22c55e",
-      notes: "",
-    },
-    {
-      id: uid(),
-      name: "Notion",
-      amount: 8.0,
-      currency: "USD",
-      cycle: { type: "Monthly", interval: 1, unit: "months" },
-      next: offsetDate(2),
-      payment: "Visa •••• 4242",
-      category: "Productivity",
-      status: "Paused",
-      reminder: false,
-      color: "#60a5fa",
-      notes: "Team plan paused",
-    },
-    {
-      id: uid(),
-      name: "iCloud",
-      amount: 2.99,
-      currency: "USD",
-      cycle: { type: "Monthly", interval: 1, unit: "months" },
-      next: offsetDate(20),
-      payment: "PayPal",
-      category: "Storage",
-      status: "Active",
-      reminder: true,
-      color: "#a78bfa",
-      notes: "200GB",
-    },
-  ],
-};
+    ...options,
+  };
 
-function offsetDate(days) {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-}
+  if (config.body && typeof config.body === 'object') {
+    config.body = JSON.stringify(config.body);
+  }
 
-let state = load();
-function load() {
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return JSON.parse(JSON.stringify(DEFAULTS));
-    const data = JSON.parse(raw);
-    // schema guard
-    data.currency ||= "USD";
-    data.reminders = data.reminders !== false;
-    data.items ||= [];
-    return data;
-  } catch {
-    return JSON.parse(JSON.stringify(DEFAULTS));
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Unauthorized - redirect to login
+        localStorage.removeItem('authToken');
+        window.location.href = 'login.html';
+        return;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.indexOf("application/json") !== -1) {
+      return await response.json();
+    }
+    return await response.text();
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
   }
 }
-function save() {
-  localStorage.setItem(LS_KEY, JSON.stringify(state));
-  render();
-  toast("Saved");
+
+// Storage - now uses API instead of localStorage
+let state = {
+  currency: "USD",
+  reminders: true,
+  items: [],
+};
+
+async function load() {
+  try {
+    // Load subscriptions from API
+    const currency = localStorage.getItem('preferredCurrency') || 'USD';
+    const subscriptions = await apiRequest(`/dashboard?currency=${currency}`);
+    
+    // Transform backend data to match frontend format
+    state.items = subscriptions.map(transformBackendToFrontend);
+    state.currency = currency;
+    state.reminders = localStorage.getItem('reminders') !== 'false';
+    
+    return state;
+  } catch (error) {
+    console.error('Failed to load subscriptions:', error);
+    toast('Failed to load subscriptions');
+    return state;
+  }
+}
+
+function transformBackendToFrontend(backendSub) {
+  return {
+    id: backendSub._id,
+    name: backendSub.name,
+    amount: backendSub.price,
+    currency: backendSub.currency,
+    cycle: {
+      type: mapBillingCycleToType(backendSub.billingCycle, backendSub.customCycle, backendSub.customUnit),
+      interval: backendSub.customCycle || 1,
+      unit: backendSub.customUnit || "months",
+    },
+    next: formatDateForFrontend(backendSub.renewalDate),
+    payment: backendSub.paymentMethod || "Not Specified",
+    category: backendSub.category?.[0] || "Uncategorized", // Assuming single category for now
+    status: capitalizeStatus(backendSub.status),
+    notes: backendSub.Notes || "",
+    color: backendSub.accentColor || "#22c55e",
+    reminder: true, // Default to true since backend doesn't have this field yet
+  };
+}
+
+function transformFrontendToBackend(frontendSub) {
+  const billingInfo = mapTypeToBillingCycle(frontendSub.cycle);
+  
+  return {
+    name: frontendSub.name,
+    price: frontendSub.amount,
+    renewalDate: frontendSub.next,
+    currency: frontendSub.currency,
+    paymentMethod: frontendSub.payment,
+    category: frontendSub.category ? [frontendSub.category] : [],
+    status: frontendSub.status.toLowerCase(),
+    accentColor: frontendSub.color,
+    Notes: frontendSub.notes,
+    billingCycle: billingInfo.billingCycle,
+    customCycle: billingInfo.customCycle,
+    customUnit: billingInfo.customUnit,
+  };
+}
+
+function mapBillingCycleToType(billingCycle, customCycle, customUnit) {
+  switch (billingCycle) {
+    case 'monthly': return 'Monthly';
+    case 'yearly': return 'Yearly';
+    case 'weekly': return 'Weekly';
+    case 'daily': return 'Daily';
+    case 'custom': return 'Custom';
+    default: return 'Monthly';
+  }
+}
+
+function mapTypeToBillingCycle(cycle) {
+  switch (cycle.type) {
+    case 'Monthly': return { billingCycle: 'monthly', customCycle: 1, customUnit: 'months' };
+    case 'Yearly': return { billingCycle: 'yearly', customCycle: 1, customUnit: 'years' };
+    case 'Weekly': return { billingCycle: 'weekly', customCycle: 1, customUnit: 'weeks' };
+    case 'Daily': return { billingCycle: 'daily', customCycle: 1, customUnit: 'days' };
+    case 'Custom': return { 
+      billingCycle: 'custom', 
+      customCycle: cycle.interval || 1, 
+      customUnit: cycle.unit || 'months' 
+    };
+    default: return { billingCycle: 'monthly', customCycle: 1, customUnit: 'months' };
+  }
+}
+
+function capitalizeStatus(status) {
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+}
+
+function formatDateForFrontend(dateString) {
+  return new Date(dateString).toISOString().slice(0, 10);
+}
+
+async function save() {
+  try {
+    // Save preferences to localStorage
+    localStorage.setItem('preferredCurrency', state.currency);
+    localStorage.setItem('reminders', state.reminders);
+    
+    // Note: Individual subscription saves are handled in specific functions
+    render();
+    toast("Settings saved");
+  } catch (error) {
+    console.error('Failed to save settings:', error);
+    toast('Failed to save settings');
+  }
+}
+
+async function saveSubscription(subscription, isEdit = false) {
+  try {
+    const backendData = transformFrontendToBackend(subscription);
+    
+    if (isEdit) {
+      // Update existing subscription
+      await apiRequest(`/dashboard/${subscription.id}`, {
+        method: 'PUT',
+        body: backendData,
+      });
+    } else {
+      // Create new subscription
+      const response = await apiRequest('/dashboard/addSub', {
+        method: 'POST',
+        body: backendData,
+      });
+      
+      // Update the subscription ID with the backend-generated ID
+      const existingIndex = state.items.findIndex(item => item.id === subscription.id);
+      if (existingIndex !== -1) {
+        state.items[existingIndex].id = response.sub._id;
+      }
+    }
+    
+    toast(isEdit ? "Subscription updated" : "Subscription added");
+    await load(); // Reload data from backend
+  } catch (error) {
+    console.error('Failed to save subscription:', error);
+    toast('Failed to save subscription');
+  }
+}
+
+async function deleteSubscription(id) {
+  try {
+    await apiRequest(`/dashboard/${id}`, {
+      method: 'DELETE',
+    });
+    
+    state.items = state.items.filter(item => item.id !== id);
+    toast("Subscription deleted");
+    render();
+  } catch (error) {
+    console.error('Failed to delete subscription:', error);
+    toast('Failed to delete subscription');
+  }
 }
 
 // Derived data
@@ -174,6 +289,7 @@ function monthlyEquivalent(item) {
   if (type === "Monthly") return amt;
   if (type === "Weekly") return (amt * 52) / 12;
   if (type === "Yearly") return amt / 12;
+  if (type === "Daily") return amt * 30;
   if (type === "Custom") {
     if (unit === "days") return amt * (30 / (interval || 1));
     if (unit === "weeks") return (amt * (52 / 12)) / (interval || 1);
@@ -197,6 +313,7 @@ function nextAfter(item, fromDate = new Date()) {
       if (type === "Monthly") next = addMonths(next, 1);
       else if (type === "Yearly") next = addYears(next, 1);
       else if (type === "Weekly") next = addWeeks(next, 1);
+      else if (type === "Daily") next = addDays(next, 1);
       else if (type === "Custom") {
         if (unit === "days") next = addDays(next, interval);
         if (unit === "weeks") next = addWeeks(next, interval);
@@ -214,7 +331,7 @@ function nextAfter(item, fromDate = new Date()) {
 // UI rendering
 let categoryChart, trendChart;
 
-function render() {
+async function render() {
   iconize();
 
   // Filters and search
@@ -445,12 +562,12 @@ function renderList(items) {
   iconize();
 
   qsa(".toggleBtn", list).forEach((b) =>
-    b.addEventListener("click", () => {
+    b.addEventListener("click", async () => {
       const id = b.getAttribute("data-id");
       const it = state.items.find((x) => x.id === id);
       if (!it) return;
       it.status = it.status === "Active" ? "Paused" : "Active";
-      save();
+      await saveSubscription(it, true);
     })
   );
   qsa(".editBtn", list).forEach((b) =>
@@ -718,17 +835,16 @@ function applySort(items) {
   return sorted;
 }
 
-// Add this function to your JavaScript
+// Theme functions
 function toggleTheme() {
   state.theme = state.theme === "dark" ? "light" : "dark";
   applyTheme(state.theme);
-  save();
+  localStorage.setItem('theme', state.theme);
 }
 
-// The rest of the theme-related functions remain the same
 function initThemeToggle() {
   // Add dark mode class to initial state
-  if (!state.theme) state.theme = "dark";
+  if (!state.theme) state.theme = localStorage.getItem('theme') || "dark";
   applyTheme(state.theme);
 }
 
@@ -751,10 +867,22 @@ function applyTheme(theme) {
 }
 
 // Events
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
+  // Check for auth token
+  if (!authToken) {
+    window.location.href = 'login.html';
+    return;
+  }
+
   iconize();
+  initThemeToggle();
+  
+  // Load data from backend
+  await load();
+  
   // Default currency
   qs("#currencySelect").value = state.currency;
+  
   // Render
   render();
 
@@ -801,47 +929,64 @@ window.addEventListener("DOMContentLoaded", () => {
     setToggle(e.currentTarget, !(e.currentTarget.dataset.on === "1"))
   );
 
-  qs("#subForm").addEventListener("submit", (e) => {
+  qs("#subForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const d = gatherForm();
     if (!d.name) return;
+    
     const existing = state.items.find((x) => x.id === d.id);
-    if (existing) Object.assign(existing, d);
-    else state.items.unshift(d);
-    save();
+    if (existing) {
+      Object.assign(existing, d);
+      await saveSubscription(d, true);
+    } else {
+      state.items.unshift(d);
+      await saveSubscription(d, false);
+    }
     closeDrawer();
   });
 
-  qs("#deleteBtn").addEventListener("click", () => {
+  qs("#deleteBtn").addEventListener("click", async () => {
     const id = qs("#subId").value;
     if (!id) return;
-    state.items = state.items.filter((x) => x.id !== id);
-    save();
+    await deleteSubscription(id);
     closeDrawer();
   });
 
-  // Bulk
-  qs("#bulkPause").addEventListener("click", () => {
+  // Bulk operations
+  qs("#bulkPause").addEventListener("click", async () => {
+    const updates = [];
     state.items.forEach((i) => {
-      if (i.status === "Active") i.status = "Paused";
+      if (i.status === "Active") {
+        i.status = "Paused";
+        updates.push(saveSubscription(i, true));
+      }
     });
-    save();
+    await Promise.all(updates);
+    toast("All subscriptions paused");
   });
-  qs("#bulkResume").addEventListener("click", () => {
+  
+  qs("#bulkResume").addEventListener("click", async () => {
+    const updates = [];
     state.items.forEach((i) => {
-      if (i.status !== "Active") i.status = "Active";
+      if (i.status !== "Active") {
+        i.status = "Active";
+        updates.push(saveSubscription(i, true));
+      }
     });
-    save();
+    await Promise.all(updates);
+    toast("All subscriptions resumed");
   });
 
   // Global settings
-  qs("#currencySelect").addEventListener("change", (e) => {
+  qs("#currencySelect").addEventListener("change", async (e) => {
     state.currency = e.target.value;
-    save();
+    await load(); // Reload with new currency conversion
+    await save();
   });
-  qs("#globalReminders").addEventListener("click", (e) => {
+  
+  qs("#globalReminders").addEventListener("click", async (e) => {
     state.reminders = !state.reminders;
-    save();
+    await save();
   });
 
   // Mobile drawer
@@ -861,28 +1006,50 @@ window.addEventListener("DOMContentLoaded", () => {
       const text = await file.text();
       const data = JSON.parse(text);
       if (!data.items) throw new Error("Invalid file");
-      state = { ...DEFAULTS, ...data };
-      save();
-      toast("Imported");
-    } catch {
+      
+      // Import subscriptions to backend
+      const importPromises = data.items.map(async (item) => {
+        const newItem = { ...item, id: uid() }; // Generate new ID
+        state.items.unshift(newItem);
+        return await saveSubscription(newItem, false);
+      });
+      
+      await Promise.all(importPromises);
+      toast("Imported successfully");
+    } catch (error) {
+      console.error('Import failed:', error);
       toast("Import failed");
     } finally {
       e.target.value = "";
     }
   });
+  
   qs("#exportBtn").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(state, null, 2)], {
+    const exportData = {
+      currency: state.currency,
+      reminders: state.reminders,
+      items: state.items,
+      exportDate: new Date().toISOString(),
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
       type: "application/json",
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "subscriptions.json";
+    a.download = `subscriptions-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
   });
+
+  // Theme toggle (if you have a theme toggle button)
+  const themeToggle = qs("#themeToggle");
+  if (themeToggle) {
+    themeToggle.addEventListener("click", toggleTheme);
+  }
 });
 
 function applyFiltersAndSort() {
