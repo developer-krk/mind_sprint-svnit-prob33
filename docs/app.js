@@ -1038,27 +1038,46 @@ window.addEventListener("DOMContentLoaded", async () => {
     render();
   });
   
-  // Sorting - Fixed event listeners
+  // Sorting - Fixed event listeners with proper toggle
   qsa(".sortBtn").forEach((b) =>
     b.addEventListener("click", (e) => {
       const sortType = e.currentTarget.dataset.sort;
       
-      // Toggle current sort or set new one
       if (currentSort === sortType) {
-        currentSort = null; // Remove sorting
-        qsa(".sortBtn").forEach((x) =>
-          x.classList.remove("border-emerald-400/30", "bg-emerald-400/10")
-        );
+        // Same button clicked - toggle direction or clear
+        if (sortDirection === 'asc') {
+          sortDirection = 'desc';
+        } else {
+          // Clear sorting
+          currentSort = null;
+          sortDirection = 'asc';
+          qsa(".sortBtn").forEach((x) => {
+            x.classList.remove("border-emerald-400/30", "bg-emerald-400/10");
+            x.querySelector('.sort-indicator')?.remove();
+          });
+          render();
+          return;
+        }
       } else {
+        // New button clicked
         currentSort = sortType;
-        qsa(".sortBtn").forEach((x) =>
-          x.classList.remove("border-emerald-400/30", "bg-emerald-400/10")
-        );
-        e.currentTarget.classList.add(
-          "border-emerald-400/30",
-          "bg-emerald-400/10"
-        );
+        sortDirection = 'asc';
       }
+      
+      // Update button styles
+      qsa(".sortBtn").forEach((x) => {
+        x.classList.remove("border-emerald-400/30", "bg-emerald-400/10");
+        x.querySelector('.sort-indicator')?.remove();
+      });
+      
+      e.currentTarget.classList.add("border-emerald-400/30", "bg-emerald-400/10");
+      
+      // Add sort direction indicator
+      const indicator = document.createElement('span');
+      indicator.className = 'sort-indicator ml-1 text-xs';
+      indicator.textContent = sortDirection === 'asc' ? '↑' : '↓';
+      e.currentTarget.appendChild(indicator);
+      
       render();
     })
   );
