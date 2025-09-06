@@ -46,32 +46,37 @@ LoginHandler.post("/", async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        // Fixed cookie configuration
-        const isProduction = process.env.NODE_ENV === 'production';
+        // Cookie configuration for cross-origin (GitHub Pages + localhost)
+        const origin = req.headers.origin;
+        const isGitHubPages = origin && origin.includes('developer-krk.github.io');
+        const isLocalhost = origin && origin.includes('localhost');
         
-        // Cookie options based on environment
-        const cookieOptions = {
+        let cookieOptions = {
             httpOnly: true,
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         };
 
-        if (isProduction) {
-            // Production settings (for GitHub Pages or similar)
+        if (isGitHubPages) {
+            // GitHub Pages to localhost backend
+            cookieOptions.secure = false; // Set to false for localhost backend
+            cookieOptions.sameSite = 'none'; // Allow cross-origin
+            // Don't set domain for cross-origin cookies
+        } else if (isLocalhost) {
+            // localhost to localhost
+            cookieOptions.secure = false;
+            cookieOptions.sameSite = 'lax';
+        } else {
+            // Production settings
             cookieOptions.secure = true;
             cookieOptions.sameSite = 'none';
-            // Don't set domain for GitHub Pages - let browser handle it
-            // Only set domain if you have a custom domain
             if (process.env.CUSTOM_DOMAIN) {
                 cookieOptions.domain = process.env.CUSTOM_DOMAIN;
             }
-        } else {
-            // Development settings
-            cookieOptions.secure = false;
-            cookieOptions.sameSite = 'lax';
-            // Don't set domain for localhost
         }
 
         console.log('🍪 Setting cookie with options:', cookieOptions);
+        console.log('🌐 Request origin:', origin);
+        
         res.cookie("auth_token", token, cookieOptions);
 
         res.json({ 
@@ -94,21 +99,26 @@ LoginHandler.post("/", async (req, res) => {
 
 // Fixed logout endpoint
 LoginHandler.post("/logout", (req, res) => {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const origin = req.headers.origin;
+    const isGitHubPages = origin && origin.includes('developer-krk.github.io');
+    const isLocalhost = origin && origin.includes('localhost');
     
-    const cookieOptions = {
+    let cookieOptions = {
         httpOnly: true,
     };
 
-    if (isProduction) {
+    if (isGitHubPages) {
+        cookieOptions.secure = false;
+        cookieOptions.sameSite = 'none';
+    } else if (isLocalhost) {
+        cookieOptions.secure = false;
+        cookieOptions.sameSite = 'lax';
+    } else {
         cookieOptions.secure = true;
         cookieOptions.sameSite = 'none';
         if (process.env.CUSTOM_DOMAIN) {
             cookieOptions.domain = process.env.CUSTOM_DOMAIN;
         }
-    } else {
-        cookieOptions.secure = false;
-        cookieOptions.sameSite = 'lax';
     }
 
     res.clearCookie("auth_token", cookieOptions);

@@ -23,20 +23,22 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false // Allow cross-origin requests
 }));
 
+// CORS Configuration - Fixed for GitHub Pages + localhost
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests from your frontend domains
+        // Define allowed origins
         const allowedOrigins = [
-            'http://localhost:3000',           // React dev server
-            'http://localhost:5173',           // Vite dev server
-            'https://developer-krk.github.io', // GitHub Pages
-            'https://your-custom-domain.com'   // Your custom domain if any
+            'http://localhost:3000',
+            'http://localhost:5173',
+            'http://localhost:8080',
+            'https://developer-krk.github.io',
+            'https://your-custom-domain.com'
         ];
         
         // Allow requests with no origin (mobile apps, Postman, etc.)
         if (!origin) return callback(null, true);
         
-        if (allowedOrigins.indexOf(origin) !== -1) {
+        if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
             console.log('🚫 Blocked origin:', origin);
@@ -45,33 +47,43 @@ const corsOptions = {
     },
     credentials: true, // This is crucial for cookies!
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    exposedHeaders: ['set-cookie']
+    allowedHeaders: [
+        'Content-Type', 
+        'Authorization', 
+        'X-Requested-With', 
+        'Accept',
+        'Origin',
+        'Cache-Control',
+        'Pragma'
+    ],
+    exposedHeaders: ['set-cookie'],
+    preflightContinue: false,
+    optionsSuccessStatus: 200
 };
 
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Additional CORS headers for better compatibility
+// Additional CORS headers for GitHub Pages compatibility
 app.use((req, res, next) => {
     const origin = req.headers.origin;
     const allowedOrigins = [
         "https://developer-krk.github.io",
         "http://localhost:3000",
-        "http://localhost:3001"
+        "http://localhost:5173",
+        "http://localhost:8080"
     ];
     
     if (allowedOrigins.includes(origin)) {
         res.header("Access-Control-Allow-Origin", origin);
+        res.header("Access-Control-Allow-Credentials", "true");
+        res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+        res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, X-Requested-With, Origin, Cache-Control, Pragma");
     }
-    
-    res.header("Access-Control-Allow-Credentials", "true");
-    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
     
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
+        return res.status(200).end();
     }
     
     next();
@@ -86,6 +98,8 @@ app.use(cookieParser());
 if (!isProduction) {
     app.use((req, res, next) => {
         console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+        console.log('Origin:', req.headers.origin);
+        console.log('Cookies:', req.cookies);
         next();
     });
 }
@@ -174,5 +188,6 @@ app.use( (req, res) => {
 // Start server
 app.listen(port, () => {
     console.log(`🚀 Server running on http://localhost:${port}`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔗 Allowing requests from: https://developer-krk.github.io`);
 });
