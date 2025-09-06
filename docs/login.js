@@ -167,21 +167,21 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       try {
-        const res = await fetch("/api/auth/signup", {
+        const res = await fetch(`${api_domain}/api/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username, password })
         });
         const data = await res.json();
 
-        if (data.success) {
+        if (data.msg == "success") {
           showPopup("Account created! Please sign in.", 2000);
           setTimeout(() => switchToSignIn(), 2000);
           // Clear form
           document.getElementById("signup-username").value = "";
           document.getElementById("signup-password").value = "";
         } else {
-          showPopup(data.message || "Registration failed");
+          showPopup(data.msg || "Registration failed");
         }
       } catch (err) {
         showPopup("Error connecting to server");
@@ -207,21 +207,21 @@ document.addEventListener("DOMContentLoaded", () => {
       saveRememberMe(username, password);
 
       try {
-        const res = await fetch("/api/auth/login", {
+        const res = await fetch(`${api_domain}/api/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username, password })
         });
         const data = await res.json();
 
-        if (data.success) {
+        if (data.msg == "success") {
           showPopup("Login successful — redirecting...", 1500);
           setTimeout(() => {
             // Redirect to home page
-            window.location.href = "/";
+            window.location.href = "homepage.html";
           }, 1000);
         } else {
-          showPopup(data.message || "Invalid username or password");
+          showPopup(data.msg || "Invalid username or password");
         }
       } catch (err) {
         showPopup("Error connecting to server");
