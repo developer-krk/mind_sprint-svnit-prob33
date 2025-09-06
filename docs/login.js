@@ -1,4 +1,5 @@
 // Theme Management
+import {api_domain} from "./config.js"
 let state = { 
   theme: localStorage.getItem("subs_theme") || "dark" 
 };
