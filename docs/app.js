@@ -257,7 +257,7 @@ function transformFrontendToBackend(frontendSub) {
     renewalDate: frontendSub.next,
     currency: frontendSub.currency,
     paymentMethod: frontendSub.payment,
-    category: backendSub.category?.length > 0 ? backendSub.category: ["Uncategorized"],
+    category: frontendSub.category?.length > 0 ? frontendSub.category: ["Uncategorized"],
     status: frontendSub.status.toLowerCase(),
     accentColor: frontendSub.color,
     Notes: frontendSub.notes,
