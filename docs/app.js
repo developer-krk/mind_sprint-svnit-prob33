@@ -324,10 +324,16 @@ async function saveSubscription(subscription, isEdit = false) {
     
     if (isEdit) {
       // Update existing subscription
-      await apiRequest(`/api/dashboard/${subscription.id}`, {
+      const response = await apiRequest(`/api/dashboard/${subscription.id}`, {
         method: 'PATCH',
-        body: backendData,
+        body: JSON.stringify(backendData),
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+      if (!response.sub) {
+        throw new Error('Invalid response from server');
+      }
     } else {
       // Create new subscription
       const response = await apiRequest('/api/dashboard/addSub', {
@@ -945,59 +951,128 @@ function toast(msg) {
   }, 1400);
 }
 
-// Sorting - Fixed
+// Sorting with direction
 let currentSort = null;
+let sortDirection = 'asc';
+
+function toggleSort(field) {
+  if (currentSort === field) {
+    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort = field;
+    sortDirection = 'asc';
+  }
+  render();
+}
+
 function applySort(items) {
   if (!currentSort) return items;
+  
   const sorted = items.slice();
-  if (currentSort === "name")
-    sorted.sort((a, b) => a.name.localeCompare(b.name));
-  if (currentSort === "amount") sorted.sort((a, b) => b.amount - a.amount);
-  if (currentSort === "status")
-    sorted.sort((a, b) => a.status.localeCompare(b.status));
-  if (currentSort === "next")
-    sorted.sort(
-      (a, b) => (nextAfter(a) || new Date('9999-12-31')) - (nextAfter(b) || new Date('9999-12-31'))
-    );
+  const direction = sortDirection === 'asc' ? 1 : -1;
+  
+  switch (currentSort) {
+    case "name":
+      sorted.sort((a, b) => direction * a.name.localeCompare(b.name));
+      break;
+    case "amount":
+      sorted.sort((a, b) => direction * (monthlyEquivalent(b) - monthlyEquivalent(a)));
+      break;
+    case "status":
+      sorted.sort((a, b) => direction * a.status.localeCompare(b.status));
+      break;
+    case "next":
+      sorted.sort((a, b) => {
+        const dateA = nextAfter(a) || new Date('9999-12-31');
+        const dateB = nextAfter(b) || new Date('9999-12-31');
+        return direction * (dateA - dateB);
+      });
+      break;
+    case "category":
+      sorted.sort((a, b) => direction * (a.category || "").localeCompare(b.category || ""));
+      break;
+    case "payment":
+      sorted.sort((a, b) => direction * (a.payment || "").localeCompare(b.payment || ""));
+      break;
+  }
+  
   return sorted;
 }
 
 // Theme functions - Fixed
 function toggleTheme() {
-  const currentTheme = state.theme || localStorage.getItem('theme') || "dark";
-  state.theme = currentTheme === "dark" ? "light" : "dark";
-  applyTheme(state.theme);
-  localStorage.setItem('theme', state.theme);
+  const currentTheme = document.documentElement.classList.contains('light-theme') ? 'light' : 'dark';
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  state.theme = newTheme;
+  applyTheme(newTheme);
+  localStorage.setItem('theme', newTheme);
+  render(); // Re-render to update UI components with new theme
 }
 
 function initThemeToggle() {
-  // Initialize theme from localStorage or default to dark
-  state.theme = localStorage.getItem('theme') || "dark";
-  applyTheme(state.theme);
+  // Initialize theme from localStorage or system preference
+  const savedTheme = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const defaultTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+  state.theme = defaultTheme;
+  applyTheme(defaultTheme);
+  
+  // Add event listener for theme toggle button
+  const themeToggleBtn = qs("#themeToggle");
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', toggleTheme);
+  }
 }
 
 function applyTheme(theme) {
   const html = document.documentElement;
-  const body = document.body;
   const darkIcon = qs(".dark-icon");
   const lightIcon = qs(".light-icon");
+  const chartElements = document.querySelectorAll('.chart-container');
 
   if (theme === "light") {
     html.classList.add("light-theme");
-    body.classList.add("light-theme");
-    // Toggle icon visibility
     if (darkIcon) darkIcon.classList.add("hidden");
     if (lightIcon) lightIcon.classList.remove("hidden");
+    
+    // Update chart colors for light theme
+    chartElements.forEach(chart => {
+      chart.style.backgroundColor = '#ffffff';
+    });
   } else {
     html.classList.remove("light-theme");
-    body.classList.remove("light-theme");
-    // Toggle icon visibility
     if (darkIcon) darkIcon.classList.remove("hidden");
     if (lightIcon) lightIcon.classList.add("hidden");
+    
+    // Update chart colors for dark theme
+    chartElements.forEach(chart => {
+      chart.style.backgroundColor = '#0B0F15';
+    });
   }
 }
 
 // Events
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize theme
+  initThemeToggle();
+  
+  // Initialize sorting
+  const sortableHeaders = document.querySelectorAll('.sortable');
+  sortableHeaders.forEach(header => {
+    header.addEventListener('click', () => {
+      const sortField = header.getAttribute('data-sort');
+      toggleSort(sortField);
+      
+      // Update sort indicators
+      sortableHeaders.forEach(h => {
+        h.classList.remove('sort-asc', 'sort-desc');
+        if (h === header) {
+          h.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+        }
+      });
+    });
+  });
+});
 window.addEventListener("DOMContentLoaded", async () => {
   // Check authentication first
   const isAuthenticated = await checkAuth();
