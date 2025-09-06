@@ -20,16 +20,39 @@ if (typeof lucide !== 'undefined') {
 // API Configuration
 const API_BASE = window.api_domain || "http://localhost:3000";
 
-// Authentication token storage (you might want to implement proper auth)
-let authToken = localStorage.getItem('authToken');
+// Token Management - Centralized (matching login.js)
+const TokenManager = {
+  getToken() {
+    return localStorage.getItem('auth_token');
+  },
+  
+  setToken(token) {
+    if (!token) {
+      console.error('Attempting to set empty token');
+      return false;
+    }
+    localStorage.setItem('auth_token', token);
+    return true;
+  },
+  
+  removeToken() {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('rememberedUser'); // Clear remembered credentials too
+  },
+  
+  hasToken() {
+    const token = this.getToken();
+    return token && token.length > 0;
+  }
+};
 
 // ---------------- AUTH HELPERS ----------------
 function makeAuthenticatedRequest(url, options = {}) {
-  const token = localStorage.getItem('auth_token');
+  const token = TokenManager.getToken();
 
   if (!token) {
     window.location.replace('login.html');
-    return;
+    return Promise.reject(new Error('No authentication token'));
   }
 
   const authOptions = {
@@ -45,9 +68,7 @@ function makeAuthenticatedRequest(url, options = {}) {
 }
 
 async function checkAuth() {
-  const token = localStorage.getItem('auth_token');
-
-  if (!token) {
+  if (!TokenManager.hasToken()) {
     window.location.replace('login.html');
     return false;
   }
@@ -56,14 +77,17 @@ async function checkAuth() {
     const response = await makeAuthenticatedRequest(`${API_BASE}/api/user`);
 
     if (!response.ok) {
-      localStorage.removeItem('auth_token');
-      window.location.replace('login.html');
-      return false;
+      if (response.status === 401 || response.status === 403) {
+        TokenManager.removeToken();
+        window.location.replace('login.html');
+        return false;
+      }
+      throw new Error(`Auth check failed with status: ${response.status}`);
     }
 
     const data = await response.json();
     if (!data.success) {
-      localStorage.removeItem('auth_token');
+      TokenManager.removeToken();
       window.location.replace('login.html');
       return false;
     }
@@ -71,14 +95,14 @@ async function checkAuth() {
     return true;
   } catch (error) {
     console.error('Auth check failed:', error);
-    localStorage.removeItem('auth_token');
+    TokenManager.removeToken();
     window.location.replace('login.html');
     return false;
   }
 }
 
 function logout() {
-  localStorage.removeItem('auth_token');
+  TokenManager.removeToken();
   window.location.replace('login.html');
 }
 
@@ -110,7 +134,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (logoutButton) {
       logoutButton.addEventListener("click", function (e) {
         e.preventDefault();
-        logout()
+        logout();
       });
     }
   }
@@ -137,10 +161,12 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 // API Helper Functions
 async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
+  const token = TokenManager.getToken();
+  
   const config = {
     headers: {
       'Content-Type': 'application/json',
-      ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
+      ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     },
     ...options,
@@ -154,10 +180,10 @@ async function apiRequest(endpoint, options = {}) {
     const response = await fetch(url, config);
     
     if (!response.ok) {
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         // Unauthorized - redirect to login
-        localStorage.removeItem('authToken');
-        window.location.href = 'login.html';
+        TokenManager.removeToken();
+        window.location.replace('login.html');
         return;
       }
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -926,13 +952,11 @@ function applyTheme(theme) {
 
 // Events
 window.addEventListener("DOMContentLoaded", async () => {
-    await checkAuth();
-
-  // Check for auth token
-  // if (!authToken) {
-  //   window.location.href = 'login.html';
-  //   return;
-  // }
+  // Check authentication first
+  const isAuthenticated = await checkAuth();
+  if (!isAuthenticated) {
+    return; // Auth check will redirect to login
+  }
 
   iconize();
   initThemeToggle();
