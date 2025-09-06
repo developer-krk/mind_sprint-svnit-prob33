@@ -3,33 +3,66 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Login - Subscription Manager</title>
+  <title>Subs - Smart Subscription Management</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.js"></script>
   <link rel="stylesheet" href="login.css" />
 </head>
 <body>
   
-  <!-- Header -->
-  <header>
-    <!-- Title only -->
-    <h1>Sub</h1>
-    
-    <!-- Home link -->
-    <nav>
-      <a href="index.html" class="nav-link">Home</a>
-    </nav>
-    
-    <!-- Theme toggle -->
-    <button
-      id="themeToggle"
-      class="theme-toggle"
-      title="Toggle theme"
-    >
-      <span class="theme-icon dark-icon">🌙</span>
-      <span class="theme-icon light-icon hidden">☀️</span>
-    </button>
+  <!-- Header/Nav -->
+  <header class="header">
+    <div class="container">
+      <div class="nav-content">
+        <a href="index.html" class="logo-link">
+          <div class="logo">
+            <div class="logo-icon">
+              <span>S</span>
+            </div>
+            <span class="logo-text">SUBS</span>
+          </div>
+        </a>
+        <div class="nav-actions">
+          <button id="themeToggle" class="theme-toggle" title="Toggle theme">
+            <i data-lucide="moon" class="icon dark-icon"></i>
+            <i data-lucide="sun" class="icon light-icon hidden"></i>
+          </button>
+
+        </div>
+      </div>
+    </div>
   </header>
+
+  <!-- Mobile Nav Drawer -->
+  <div id="mobileDrawer" class="mobile-drawer hidden">
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+    <div class="mobile-drawer-content">
+      <div class="mobile-header">
+        <a href="attached_assets/index_1757150086459.html" class="logo-link">
+          <div class="logo">
+            <div class="logo-icon">
+              <span>S</span>
+            </div>
+            <span class="logo-text">SUBS</span>
+          </div>
+        </a>
+        <button id="mobileClose" class="mobile-close">
+          <i data-lucide="x" class="icon"></i>
+        </button>
+      </div>
+      <nav class="mobile-nav">
+        <a href="attached_assets/index_1757150086459.html" class="mobile-nav-link">
+          <i data-lucide="home" class="icon"></i>
+          <span>Home</span>
+        </a>
+        <a href="support.html" class="mobile-nav-link">
+          <i data-lucide="help-circle" class="icon"></i>
+          <span>Support</span>
+        </a>
+      </nav>
+    </div>
+  </div>
 
   <!-- Main -->
   <main class="main-container">
@@ -42,7 +75,7 @@
       </div>
 
       <!-- Sign In Form -->
-      <form id="signInForm" class="auth-form" autocomplete="on">
+      <form id="signInForm" class="auth-form">
         <div class="field-container">
           <input 
             id="signin-username" 
@@ -89,7 +122,7 @@
       </form>
 
       <!-- Sign Up Form -->
-      <form id="signUpForm" class="auth-form hidden" autocomplete="new-password">
+      <form id="signUpForm" class="auth-form hidden">
         <div class="field-container">
           <input 
             id="signup-username" 
@@ -134,7 +167,7 @@
 
   <!-- Toast -->
   <div id="popup" class="popup hidden"></div>
-  <script src="config.js" ></script>
+
   <script src="login.js"></script>
 </body>
 </html>

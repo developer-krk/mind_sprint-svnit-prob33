@@ -1,5 +1,4 @@
 // Theme Management
-const api_domain = window.api_domain
 let state = { 
   theme: localStorage.getItem("subs_theme") || "dark" 
 };
@@ -30,6 +29,32 @@ function applyTheme(theme) {
     body.classList.remove("light-theme");
     if (darkIcon) darkIcon.classList.remove("hidden");
     if (lightIcon) lightIcon.classList.add("hidden");
+  }
+}
+
+// Mobile Navigation
+function initMobileNav() {
+  const mobileNavBtn = document.getElementById("mobileNavBtn");
+  const mobileClose = document.getElementById("mobileClose");
+  const mobileDrawer = document.getElementById("mobileDrawer");
+  const mobileOverlay = document.getElementById("mobileOverlay");
+
+  if (mobileNavBtn) {
+    mobileNavBtn.addEventListener("click", () => {
+      mobileDrawer.classList.remove("hidden");
+    });
+  }
+
+  if (mobileClose) {
+    mobileClose.addEventListener("click", () => {
+      mobileDrawer.classList.add("hidden");
+    });
+  }
+
+  if (mobileOverlay) {
+    mobileOverlay.addEventListener("click", () => {
+      mobileDrawer.classList.add("hidden");
+    });
   }
 }
 
@@ -138,6 +163,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize theme
   initThemeToggle();
   
+  // Initialize mobile navigation
+  initMobileNav();
+  
+  // Initialize Lucide icons
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+  
   // Load remembered credentials
   loadRememberMe();
 
@@ -168,14 +201,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       try {
-        const res = await fetch(`${api_domain}/api/auth/register`, {
+        const res = await fetch("/api/auth/signup", {
           method: "POST",
-          headers: { 
-  "Content-Type": "application/json",
-  "Accept": "application/json"
-},
-credentials: 'include',
-body: JSON.stringify({ username, password })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
         });
         const data = await res.json();
 
@@ -186,7 +215,7 @@ body: JSON.stringify({ username, password })
           document.getElementById("signup-username").value = "";
           document.getElementById("signup-password").value = "";
         } else {
-          showPopup(data.msg || "Registration failed");
+          showPopup(data.message || "Registration failed");
         }
       } catch (err) {
         showPopup("Error connecting to server");
@@ -212,27 +241,22 @@ body: JSON.stringify({ username, password })
       saveRememberMe(username, password);
 
       try {
-        const res = await fetch(`${api_domain}/api/auth/login`, {
+        const res = await fetch("/api/auth/login", {
           method: "POST",
-          headers: { 
-  "Content-Type": "application/json",
-  "Accept": "application/json"
-},
-credentials: 'include',body: JSON.stringify({ username, password })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
         });
         const data = await res.json();
 
         if (data.success) {
-    // Store token in localStorage
-    localStorage.setItem('auth_token', data.token);
-    
-    showPopup("Login successful — redirecting...", 1500);
-    setTimeout(() => {
-        window.location.replace("homepage.html"); // or homepage.html
-    }, 1000);
-} else {
-    showPopup(data.msg || "Invalid username or password");
-}
+          showPopup("Login successful — redirecting...", 1500);
+          setTimeout(() => {
+            // Redirect to home page
+            window.location.href = "/";
+          }, 1000);
+        } else {
+          showPopup(data.message || "Invalid username or password");
+        }
       } catch (err) {
         showPopup("Error connecting to server");
         console.error(err);
