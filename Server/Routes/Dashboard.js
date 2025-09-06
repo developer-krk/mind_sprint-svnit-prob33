@@ -129,7 +129,25 @@ SubscriptionHandler.delete("/:id", async (req, res) => {
         res.status(500).json({ message: "Failed to delete subscription" });
     }
 });
-// Handle category update
+SubscriptionHandler.patch("/:id", async (req, res) => {
+    try {
+        const subId = req.params.id;
+        const body = req.body;
+
+        const sub = await subscription.findById(subId);
+        if (!sub) return res.status(404).json({ message: "Subscription not found" });
+
+        // Update basic fields dynamically
+        const updatable = [
+            "name", "price", "renewalDate", "currency", "paymentMethod",
+            "status", "accentColor", "Notes", "billingCycle",
+            "customCycle", "customUnit"
+        ];
+        updatable.forEach(field => {
+            if (body[field] !== undefined) sub[field] = body[field];
+        });
+
+        // Handle category update
 if (Array.isArray(body.category) || !body.category) {
     // Remove subscription from old categories
     if (sub.category && sub.category.length > 0) {
@@ -164,4 +182,13 @@ if (Array.isArray(body.category) || !body.category) {
         sub.category.push(cated._id);
     }
 }
+
+        await sub.save();
+        res.json({ message: "Subscription updated successfully", sub });
+    } catch (err) {
+        console.error("Error updating subscription:", err);
+        res.status(500).json({ message: "Failed to update subscription" });
+    }
+});
+
 module.exports = SubscriptionHandler;
