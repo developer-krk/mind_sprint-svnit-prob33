@@ -949,6 +949,7 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { 
     t.classList.add("hidden");
+    render()
   }, 1400);
 }
 
