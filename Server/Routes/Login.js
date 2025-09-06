@@ -1,3 +1,11 @@
+const express = require('express');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const User = require("../model/Users");
+
+const LoginHandler = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET || "SVNIT2028";
+
 LoginHandler.post("/", async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -54,3 +62,46 @@ LoginHandler.post("/", async (req, res) => {
         });
     }
 });
+
+// Fixed logout endpoint with proper cross-origin cookie clearing
+LoginHandler.post("/logout", (req, res) => {
+    const origin = req.headers.origin;
+    const isGitHubPages = origin && origin.includes('developer-krk.github.io');
+    const isLocalhost = origin && origin.includes('localhost');
+    
+    let cookieOptions = {
+        httpOnly: true,
+    };
+
+    if (isGitHubPages) {
+        cookieOptions = {
+            ...cookieOptions,
+            secure: false,
+            sameSite: 'none'
+            // DO NOT set domain for cross-origin
+        };
+    } else if (isLocalhost) {
+        cookieOptions = {
+            ...cookieOptions,
+            secure: false,
+            sameSite: 'lax'
+        };
+    } else {
+        cookieOptions = {
+            ...cookieOptions,
+            secure: true,
+            sameSite: 'strict',
+            domain: process.env.CUSTOM_DOMAIN || undefined
+        };
+    }
+
+    console.log('🗑️ Clearing cookie with options:', cookieOptions);
+    res.clearCookie("auth_token", cookieOptions);
+    
+    res.json({ 
+        success: true, 
+        msg: "Logged out successfully" 
+    });
+});
+
+module.exports = LoginHandler;
