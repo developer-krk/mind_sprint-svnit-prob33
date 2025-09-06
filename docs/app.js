@@ -962,34 +962,38 @@ function applySort(items) {
   return sorted;
 }
 
-// Theme functions
+// Theme functions - Fixed
 function toggleTheme() {
-  state.theme = state.theme === "dark" ? "light" : "dark";
+  const currentTheme = state.theme || localStorage.getItem('theme') || "dark";
+  state.theme = currentTheme === "dark" ? "light" : "dark";
   applyTheme(state.theme);
   localStorage.setItem('theme', state.theme);
 }
 
 function initThemeToggle() {
-  // Add dark mode class to initial state
-  if (!state.theme) state.theme = localStorage.getItem('theme') || "dark";
+  // Initialize theme from localStorage or default to dark
+  state.theme = localStorage.getItem('theme') || "dark";
   applyTheme(state.theme);
 }
 
 function applyTheme(theme) {
   const html = document.documentElement;
+  const body = document.body;
   const darkIcon = qs(".dark-icon");
   const lightIcon = qs(".light-icon");
 
   if (theme === "light") {
     html.classList.add("light-theme");
+    body.classList.add("light-theme");
     // Toggle icon visibility
-    darkIcon?.classList.add("hidden");
-    lightIcon?.classList.remove("hidden");
+    if (darkIcon) darkIcon.classList.add("hidden");
+    if (lightIcon) lightIcon.classList.remove("hidden");
   } else {
     html.classList.remove("light-theme");
+    body.classList.remove("light-theme");
     // Toggle icon visibility
-    darkIcon?.classList.remove("hidden");
-    lightIcon?.classList.add("hidden");
+    if (darkIcon) darkIcon.classList.remove("hidden");
+    if (lightIcon) lightIcon.classList.add("hidden");
   }
 }
 
@@ -1116,14 +1120,16 @@ window.addEventListener("DOMContentLoaded", async () => {
     toast("All subscriptions resumed");
   });
 
-  // Global settings - Fixed currency change to not refresh page
+  // Global settings - Currency change with reload after toast
   qs("#currencySelect").addEventListener("change", async (e) => {
     state.currency = e.target.value;
     // Save currency preference locally
     localStorage.setItem('preferredCurrency', state.currency);
-    // Re-render with new currency format without reloading data
-    render();
+    // Show toast and reload after delay
     toast("Currency updated");
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
   });
   
   // Global reminders toggle - Fixed
