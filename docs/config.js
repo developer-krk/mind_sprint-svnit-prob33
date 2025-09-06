@@ -1,1 +1,1 @@
-window.api_domain = "https://www.mindsprint-svnit-prob33-production.up.railway.app"
+window.api_domain = "https://mindsprint-svnit-prob33-production.up.railway.app"
