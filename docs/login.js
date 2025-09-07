@@ -1,5 +1,5 @@
 // Theme Management
-const api_domain = window.api_domain
+const api_domain = "https://mindsprint-svnit-prob33-production.up.railway.app"
 let state = { 
   theme: localStorage.getItem("theme") || "dark" 
 };

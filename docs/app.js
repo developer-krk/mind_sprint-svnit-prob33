@@ -19,7 +19,7 @@ if (typeof lucide !== 'undefined') {
 }
 
 // API Configuration
-const API_BASE = window.api_domain ;
+const API_BASE ="https://mindsprint-svnit-prob33-production.up.railway.app" ;
 
 // Token Management - Centralized (matching login.js)
 const TokenManager = {
