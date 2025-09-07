@@ -423,6 +423,10 @@ document.addEventListener("DOMContentLoaded", () => {
                   timestamp: Date.now()
                 };
                 sessionStorage.setItem("rememberedUser", JSON.stringify(userData2));
+                const rememberMeCheckbox = document.getElementById("rememberMe");
+if (rememberMeCheckbox && rememberMeCheckbox.checked) {
+  localStorage.setItem("rememberedUser", JSON.stringify(userData2));
+}
               setTimeout(() => {
                 window.location.replace("homepage.html");
               }, 1000);

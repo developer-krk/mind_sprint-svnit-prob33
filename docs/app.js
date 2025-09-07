@@ -1025,7 +1025,19 @@ function initThemeToggle() {
     themeToggleBtn.addEventListener('click', toggleTheme);
   }
 }
-qs(".username").innerHTML = JSON.parse(sessionStorage.getItem("rememberedUser")).username
+// Replace
+const remembered = sessionStorage.getItem("rememberedUser") || localStorage.getItem("rememberedUser");
+if (remembered) {
+  try {
+    const userData = JSON.parse(remembered);
+    if (userData && userData.username) {
+      qs(".username").innerHTML = userData.username;
+    }
+  } catch (err) {
+    console.error("Failed to parse rememberedUser:", err);
+  }
+}
+
 function applyTheme(theme) {
   const html = document.documentElement;
   const darkIcon = qs(".dark-icon");
