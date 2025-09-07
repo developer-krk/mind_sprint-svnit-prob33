@@ -52,20 +52,16 @@ function makeAuthenticatedRequest(url, options = {}) {
   const token = TokenManager.getToken();
 
   if (!token) {
-    // no token → back to login
     window.location.replace('login.html');
     return Promise.reject(new Error('No authentication token'));
   }
 
   const authOptions = {
     ...options,
-    method: options.method || 'GET',
-    credentials: 'include', // ⬅️ include cookies for refresh/session flows
     headers: {
-      ...(options.headers || {}),
+      ...options.headers,
       'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
+      'Content-Type': 'application/json'
     }
   };
 
@@ -79,55 +75,29 @@ async function checkAuth() {
   }
 
   try {
-    let response = await makeAuthenticatedRequest(`${API_BASE}/api/user`);
+    const response = await makeAuthenticatedRequest(`${API_BASE}/api/user`);
 
-    // ⬇️ If unauthorized, try one refresh
-    if (response && (response.status === 401 || response.status === 403)) {
-      console.warn("Token expired/invalid, attempting refresh...");
-      try {
-        const refresh = await fetch(`${API_BASE}/api/auth/refresh`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json", "Accept": "application/json" }
-        });
-
-        if (refresh.ok) {
-          const refreshData = await refresh.json();
-          if (refreshData && refreshData.success && refreshData.token) {
-            TokenManager.setToken(refreshData.token);
-            localStorage.setItem("auth_token", refreshData.token);
-            // retry once after refresh
-            response = await makeAuthenticatedRequest(`${API_BASE}/api/user`);
-          } else {
-            throw new Error("Refresh endpoint returned invalid payload");
-          }
-        } else {
-          throw new Error(`Refresh request failed with status ${refresh.status}`);
-        }
-      } catch (refreshErr) {
-        console.error("Token refresh failed:", refreshErr);
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
         TokenManager.removeToken();
-        window.location.replace("login.html");
+        window.location.replace('login.html');
         return false;
       }
-    }
-
-    if (!response || !response.ok) {
-      throw new Error(`Auth check failed with status: ${response ? response.status : 'no response'}`);
+      throw new Error(`Auth check failed with status: ${response.status}`);
     }
 
     const data = await response.json();
-    if (!data || data.success === false) {
+    if (!data.success) {
       TokenManager.removeToken();
-      window.location.replace("login.html");
+      window.location.replace('login.html');
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error("Auth check failed:", error);
+    console.error('Auth check failed:', error);
     TokenManager.removeToken();
-    window.location.replace("login.html");
+    window.location.replace('login.html');
     return false;
   }
 }
@@ -1055,7 +1025,7 @@ function initThemeToggle() {
     themeToggleBtn.addEventListener('click', toggleTheme);
   }
 }
-qs(".username").innerHTML = JSON.parse(localStorage.getItem("rememberedUser")).username
+qs(".username").innerHTML = JSON.parse(sessionStorage.getItem("rememberedUser")).username
 function applyTheme(theme) {
   const html = document.documentElement;
   const darkIcon = qs(".dark-icon");

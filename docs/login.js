@@ -150,7 +150,6 @@ function saveRememberMe(username, password) {
     if (rememberMeCheckbox.checked) {
       const userData = {
         username: username,
-        password: password,     // stored ONLY to prefill; consider clearing after success
         timestamp: Date.now()
       };
       localStorage.setItem("rememberedUser", JSON.stringify(userData));
@@ -161,7 +160,6 @@ function saveRememberMe(username, password) {
     console.error('Failed to save remember me data:', error);
   }
 }
-
 
 function loadRememberMe() {
   try {
@@ -415,27 +413,22 @@ document.addEventListener("DOMContentLoaded", () => {
           const data = await makeAuthRequest('/api/auth/login', {
             body: JSON.stringify({ username, password })
           });
-if (data.success && data.token) {
-  if (TokenManager.setToken(data.token)) {
-    const userData2 = { username, timestamp: Date.now() };
 
-    // Save user in session
-    sessionStorage.setItem("rememberedUser", JSON.stringify(userData2));
-
-    // If “Remember me” checked → also save in localStorage
-    const rememberMeCheckbox = document.getElementById("rememberMe");
-    if (rememberMeCheckbox && rememberMeCheckbox.checked) {
-      localStorage.setItem("rememberedUser", JSON.stringify(userData2));
-    }
-
-    // 🔑 Make sure token is persisted
-    localStorage.setItem("auth_token", data.token);
-
-    showPopup("Login successful — redirecting...", 1500);
-    setTimeout(() => window.location.replace("homepage.html"), 1000);
-  } else {
-    showPopup("Login failed - invalid token received");
-  }
+          if (data.success && data.token) {
+            // Store token securely
+            if (TokenManager.setToken(data.token)) {
+              showPopup("Login successful — redirecting...", 1500);
+                const userData2 = {
+                  username: username,
+                  timestamp: Date.now()
+                };
+                sessionStorage.setItem("rememberedUser", JSON.stringify(userData2));
+              setTimeout(() => {
+                window.location.replace("homepage.html");
+              }, 1000);
+            } else {
+              showPopup("Login failed - invalid token received");
+            }
           } else {
             showPopup(data.msg || "Invalid username or password");
             // Clear remembered credentials on failed login
