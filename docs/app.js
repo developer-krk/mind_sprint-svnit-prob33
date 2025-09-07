@@ -1025,7 +1025,7 @@ function initThemeToggle() {
     themeToggleBtn.addEventListener('click', toggleTheme);
   }
 }
-qs(".username").innerHTML = JSON.parse(localStorage.getItem("rememberedUser")).username
+qs(".username").innerHTML = JSON.parse(sessionStorage.getItem("rememberedUser")).username
 function applyTheme(theme) {
   const html = document.documentElement;
   const darkIcon = qs(".dark-icon");
