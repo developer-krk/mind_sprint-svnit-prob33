@@ -52,16 +52,20 @@ function makeAuthenticatedRequest(url, options = {}) {
   const token = TokenManager.getToken();
 
   if (!token) {
+    // no token → back to login
     window.location.replace('login.html');
     return Promise.reject(new Error('No authentication token'));
   }
 
   const authOptions = {
     ...options,
+    method: options.method || 'GET',
+    credentials: 'include', // ⬅️ include cookies for refresh/session flows
     headers: {
-      ...options.headers,
+      ...(options.headers || {}),
       'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
     }
   };
 
@@ -77,30 +81,28 @@ async function checkAuth() {
   try {
     let response = await makeAuthenticatedRequest(`${API_BASE}/api/user`);
 
-    // If unauthorized, try refresh once
-    if (response.status === 401 || response.status === 403) {
-      console.warn("Token expired, trying refresh...");
+    // ⬇️ If unauthorized, try one refresh
+    if (response && (response.status === 401 || response.status === 403)) {
+      console.warn("Token expired/invalid, attempting refresh...");
       try {
         const refresh = await fetch(`${API_BASE}/api/auth/refresh`, {
           method: "POST",
           credentials: "include",
-          headers: { "Content-Type": "application/json" }
+          headers: { "Content-Type": "application/json", "Accept": "application/json" }
         });
 
         if (refresh.ok) {
           const refreshData = await refresh.json();
-          if (refreshData.success && refreshData.token) {
-            // Save new token
+          if (refreshData && refreshData.success && refreshData.token) {
             TokenManager.setToken(refreshData.token);
             localStorage.setItem("auth_token", refreshData.token);
-
-            // Retry request once
+            // retry once after refresh
             response = await makeAuthenticatedRequest(`${API_BASE}/api/user`);
           } else {
-            throw new Error("Refresh failed");
+            throw new Error("Refresh endpoint returned invalid payload");
           }
         } else {
-          throw new Error("Refresh request failed");
+          throw new Error(`Refresh request failed with status ${refresh.status}`);
         }
       } catch (refreshErr) {
         console.error("Token refresh failed:", refreshErr);
@@ -110,12 +112,12 @@ async function checkAuth() {
       }
     }
 
-    if (!response.ok) {
-      throw new Error(`Auth check failed with status: ${response.status}`);
+    if (!response || !response.ok) {
+      throw new Error(`Auth check failed with status: ${response ? response.status : 'no response'}`);
     }
 
     const data = await response.json();
-    if (!data.success) {
+    if (!data || data.success === false) {
       TokenManager.removeToken();
       window.location.replace("login.html");
       return false;

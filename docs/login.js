@@ -150,6 +150,7 @@ function saveRememberMe(username, password) {
     if (rememberMeCheckbox.checked) {
       const userData = {
         username: username,
+        password: password,     // stored ONLY to prefill; consider clearing after success
         timestamp: Date.now()
       };
       localStorage.setItem("rememberedUser", JSON.stringify(userData));
@@ -160,6 +161,7 @@ function saveRememberMe(username, password) {
     console.error('Failed to save remember me data:', error);
   }
 }
+
 
 function loadRememberMe() {
   try {
