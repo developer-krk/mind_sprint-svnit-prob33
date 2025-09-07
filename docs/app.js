@@ -1024,14 +1024,13 @@ function initThemeToggle() {
   if (themeToggleBtn) {
     themeToggleBtn.addEventListener('click', toggleTheme);
   }
-}
-// Replace
-const remembered = sessionStorage.getItem("rememberedUser") || localStorage.getItem("rememberedUser");
+}const remembered = sessionStorage.getItem("rememberedUser") || localStorage.getItem("rememberedUser");
 if (remembered) {
   try {
     const userData = JSON.parse(remembered);
     if (userData && userData.username) {
-      qs(".username").innerHTML = userData.username;
+      const usernameEls = qsa(".username");
+      usernameEls.forEach(el => el.innerHTML = userData.username);
     }
   } catch (err) {
     console.error("Failed to parse rememberedUser:", err);
