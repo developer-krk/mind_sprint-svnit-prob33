@@ -129,7 +129,7 @@ const TokenManager = {
   
   removeToken() {
     localStorage.removeItem('auth_token');
-    // Don't remove rememberedUser here - only remove on explicit logout or failed login
+    localStorage.removeItem('rememberedUser'); // Clear remembered credentials too
   },
   
   hasToken() {
@@ -415,29 +415,27 @@ document.addEventListener("DOMContentLoaded", () => {
           });
 
           if (data.success && data.token) {
-  // Store token securely
-  if (TokenManager.setToken(data.token)) {
-    // Store user data in sessionStorage for app.js to access
-    const userData = {
-      username: username,
-      timestamp: Date.now()
-    };
-    sessionStorage.setItem("currentUser", JSON.stringify(userData));
-    
-    showPopup("Login successful — redirecting...", 1500);
-    setTimeout(() => {
-      window.location.replace("homepage.html");
-    }, 1000);
-  } else {
-    showPopup("Login failed - invalid token received");
-  }
-} else {
-  showPopup(data.msg || "Invalid username or password");
-  // Only clear remembered credentials on explicit auth failure
-  if (data.msg && data.msg.includes("Invalid")) {
-    localStorage.removeItem("rememberedUser");
-  }
-}
+            // Store token securely
+            if (TokenManager.setToken(data.token)) {
+              showPopup("Login successful — redirecting...", 1500);
+                const userData2 = {
+                  username: username,
+                  timestamp: Date.now()
+                };
+                sessionStorage.setItem("rememberedUser", JSON.stringify(userData2));
+              setTimeout(() => {
+                window.location.replace("homepage.html");
+              }, 1000);
+            } else {
+              showPopup("Login failed - invalid token received");
+            }
+          } else {
+            showPopup(data.msg || "Invalid username or password");
+            // Clear remembered credentials on failed login
+            if (!data.success) {
+              localStorage.removeItem("rememberedUser");
+            }
+          }
         } catch (error) {
           console.error('Login error:', error);
           showPopup(error.message || "Login failed");
