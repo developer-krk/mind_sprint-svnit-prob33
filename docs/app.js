@@ -75,29 +75,57 @@ async function checkAuth() {
   }
 
   try {
-    const response = await makeAuthenticatedRequest(`${API_BASE}/api/user`);
+    let response = await makeAuthenticatedRequest(`${API_BASE}/api/user`);
 
-    if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
+    // If unauthorized, try refresh once
+    if (response.status === 401 || response.status === 403) {
+      console.warn("Token expired, trying refresh...");
+      try {
+        const refresh = await fetch(`${API_BASE}/api/auth/refresh`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" }
+        });
+
+        if (refresh.ok) {
+          const refreshData = await refresh.json();
+          if (refreshData.success && refreshData.token) {
+            // Save new token
+            TokenManager.setToken(refreshData.token);
+            localStorage.setItem("auth_token", refreshData.token);
+
+            // Retry request once
+            response = await makeAuthenticatedRequest(`${API_BASE}/api/user`);
+          } else {
+            throw new Error("Refresh failed");
+          }
+        } else {
+          throw new Error("Refresh request failed");
+        }
+      } catch (refreshErr) {
+        console.error("Token refresh failed:", refreshErr);
         TokenManager.removeToken();
-        window.location.replace('login.html');
+        window.location.replace("login.html");
         return false;
       }
+    }
+
+    if (!response.ok) {
       throw new Error(`Auth check failed with status: ${response.status}`);
     }
 
     const data = await response.json();
     if (!data.success) {
       TokenManager.removeToken();
-      window.location.replace('login.html');
+      window.location.replace("login.html");
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Auth check failed:', error);
+    console.error("Auth check failed:", error);
     TokenManager.removeToken();
-    window.location.replace('login.html');
+    window.location.replace("login.html");
     return false;
   }
 }
