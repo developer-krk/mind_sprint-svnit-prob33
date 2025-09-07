@@ -418,11 +418,6 @@ document.addEventListener("DOMContentLoaded", () => {
             // Store token securely
             if (TokenManager.setToken(data.token)) {
               showPopup("Login successful — redirecting...", 1500);
-                const userData2 = {
-                  username: username,
-                  timestamp: Date.now()
-                };
-                sessionStorage.setItem("rememberedUser", JSON.stringify(userData2));
               setTimeout(() => {
                 window.location.replace("homepage.html");
               }, 1000);
