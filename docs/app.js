@@ -1087,6 +1087,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (!isAuthenticated) {
     return; // Auth check will redirect to login
   }
+    if (window.currentUser && window.currentUser.username) {
+    const userEl = qs(".username");
+    if (userEl) {
+      userEl.innerHTML = escapeHtml(window.currentUser.username);
+    }
+  }
 
   iconize();
   initThemeToggle();
