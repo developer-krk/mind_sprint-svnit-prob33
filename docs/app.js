@@ -79,25 +79,32 @@ async function checkAuth() {
 
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
+        // ❌ Token invalid/expired → clear & redirect
         TokenManager.removeToken();
         window.location.replace('login.html');
         return false;
       }
+      // Other HTTP errors (500, 502, etc.)
       throw new Error(`Auth check failed with status: ${response.status}`);
     }
 
     const data = await response.json();
     if (!data.success) {
+      // Backend explicitly says auth failed → logout
       TokenManager.removeToken();
       window.location.replace('login.html');
       return false;
     }
 
+    // ✅ Save user for later use
+    window.currentUser = data.user || null;
+
     return true;
   } catch (error) {
     console.error('Auth check failed:', error);
-    TokenManager.removeToken();
-    window.location.replace('login.html');
+    // 🟡 Network issue (server down, offline, timeout, etc.)
+    // Keep token → don't log user out
+    toast("Connection issue — please retry");
     return false;
   }
 }
