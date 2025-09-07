@@ -19,7 +19,7 @@ if (typeof lucide !== 'undefined') {
 }
 
 // API Configuration
-const API_BASE = window.api_domain || "http://localhost:3000";
+const API_BASE = window.api_domain ;
 
 // Token Management - Centralized (matching login.js)
 const TokenManager = {
@@ -1086,6 +1086,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   const isAuthenticated = await checkAuth();
   if (!isAuthenticated) {
     return; // Auth check will redirect to login
+  }
+    if (window.currentUser && window.currentUser.username) {
+    const userEl = qs(".username");
+    if (userEl) {
+      userEl.innerHTML = escapeHtml(window.currentUser.username);
+    }
   }
 
   iconize();
