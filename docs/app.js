@@ -1054,19 +1054,8 @@ function initThemeToggle() {
   if (themeToggleBtn) {
     themeToggleBtn.addEventListener('click', toggleTheme);
   }
-}const remembered = sessionStorage.getItem("rememberedUser") || localStorage.getItem("rememberedUser");
-if (remembered) {
-  try {
-    const userData = JSON.parse(remembered);
-    if (userData && userData.username) {
-      const usernameEls = qsa(".username");
-      usernameEls.forEach(el => el.innerHTML = userData.username);
-    }
-  } catch (err) {
-    console.error("Failed to parse rememberedUser:", err);
-  }
 }
-
+qs(".username").innerHTML = JSON.parse(localStorage.getItem("rememberedUser")).username
 function applyTheme(theme) {
   const html = document.documentElement;
   const darkIcon = qs(".dark-icon");
