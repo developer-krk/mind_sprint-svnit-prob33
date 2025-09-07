@@ -1,13 +1,13 @@
 // Theme Management
 const api_domain = window.api_domain
 let state = { 
-  theme: localStorage.getItem("subs_theme") || "dark" 
+  theme: localStorage.getItem("theme") || "dark" 
 };
 
 function toggleTheme() {
   state.theme = state.theme === "dark" ? "light" : "dark";
   applyTheme(state.theme);
-  localStorage.setItem("subs_theme", state.theme);
+  localStorage.setItem("theme", state.theme);
 }
 
 function initThemeToggle() {
@@ -150,6 +150,7 @@ function saveRememberMe(username, password) {
     if (rememberMeCheckbox.checked) {
       const userData = {
         username: username,
+        password:password,
         timestamp: Date.now()
       };
       localStorage.setItem("rememberedUser", JSON.stringify(userData));
