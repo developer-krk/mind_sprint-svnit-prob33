@@ -15,6 +15,12 @@ const app = express();
 const port = process.env.PORT || 3000;
 const mongoURI = process.env.MONGO_URI;
 
+// Validate critical environment variables
+if (!mongoURI) {
+  console.error('❌ MONGO_URI environment variable is required');
+  process.exit(1);
+}
+
 // Environment check
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -73,7 +79,8 @@ app.use((req, res, next) => {
         "https://developer-krk.github.io",
         "http://localhost:3000",
         "http://localhost:5173",
-        "http://localhost:8080"
+        "http://localhost:8080",
+        "https://mindsprint-svnit-prob33-production.up.railway.app" 
     ];
     
     if (allowedOrigins.includes(origin)) {
@@ -110,15 +117,30 @@ if (!isProduction) {
     });
 }
 
-// Database connection with better error handling
-mongoose.connect(mongoURI)
-.then(() => {
+// Database connection with retry logic
+const connectWithRetry = async () => {
+  try {
+    await mongoose.connect(mongoURI);
     console.log("🟢 MongoDB Connected Successfully");
-})
-.catch(err => {
+  } catch (err) {
     console.error("🔴 MongoDB Connection Error:", err.message);
-    process.exit(1);
-});
+    
+    // Provide specific guidance for authentication errors
+    if (err.message.includes('bad auth') || err.message.includes('authentication failed')) {
+      console.error('❌ Authentication failed. Please check:');
+      console.error('1. MongoDB username and password in your connection string');
+      console.error('2. Database user permissions in MongoDB');
+      console.error('3. IP whitelist if using MongoDB Atlas');
+      console.error('4. Database name in your connection string');
+    }
+    
+    console.log("🟡 Retrying connection in 5 seconds...");
+    setTimeout(connectWithRetry, 5000);
+  }
+};
+
+// Initial connection attempt
+connectWithRetry();
 
 // Handle MongoDB connection events
 mongoose.connection.on('error', err => {
@@ -127,21 +149,27 @@ mongoose.connection.on('error', err => {
 
 mongoose.connection.on('disconnected', () => {
     console.log('🟡 MongoDB Disconnected');
+    console.log('🟡 Attempting to reconnect...');
+    setTimeout(connectWithRetry, 5000);
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
     console.log('🟡 Shutting down gracefully...');
     await mongoose.connection.close();
+    console.log('🟢 MongoDB connection closed.');
     process.exit(0);
 });
 
 // Health check endpoint with CORS info
 app.get('/health', (req, res) => {
+    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+    
     res.status(200).json({
         status: 'OK',
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
+        database: dbStatus,
         cors: {
             origin: req.headers.origin,
             cookies: Object.keys(req.cookies).length
@@ -158,6 +186,22 @@ app.get('/api/test-cookie', (req, res) => {
         cookiesReceived: cookies,
         hasAuthToken: !!cookies.auth_token,
         origin: req.headers.origin
+    });
+});
+
+// MongoDB connection status endpoint
+app.get('/api/db-status', (req, res) => {
+    const status = mongoose.connection.readyState;
+    const statusMap = {
+        0: 'disconnected',
+        1: 'connected',
+        2: 'connecting',
+        3: 'disconnecting'
+    };
+    
+    res.json({
+        dbStatus: statusMap[status] || 'unknown',
+        dbStatusValue: status
     });
 });
 
@@ -211,4 +255,9 @@ app.listen(port, () => {
     console.log(`🍪 Cross-origin cookies: ENABLED`);
     console.log(`📡 CORS credentials: ENABLED`);
     console.log('---');
+    
+    // Log MongoDB connection status
+    const dbStatus = mongoose.connection.readyState;
+    const statusMessage = dbStatus === 1 ? '🟢 MongoDB Connected' : '🟡 MongoDB Connecting...';
+    console.log(statusMessage);
 });
