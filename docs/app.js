@@ -21,7 +21,7 @@ if (typeof lucide !== 'undefined') {
 // API Configuration
 const API_BASE = window.api_domain || "http://localhost:3000";
 
-
+// Token Management - Centralized (matching login.js)
 const TokenManager = {
   getToken() {
     return localStorage.getItem('auth_token');
@@ -38,8 +38,7 @@ const TokenManager = {
   
   removeToken() {
     localStorage.removeItem('auth_token');
-    localStorage.removeItem('rememberedUser'); // Only clear on explicit logout
-    sessionStorage.removeItem('currentUser'); // Clear current session
+    localStorage.removeItem('rememberedUser'); // Clear remembered credentials too
   },
   
   hasToken() {
@@ -47,6 +46,7 @@ const TokenManager = {
     return token && token.length > 0;
   }
 };
+
 // ---------------- AUTH HELPERS ----------------
 function makeAuthenticatedRequest(url, options = {}) {
   const token = TokenManager.getToken();
@@ -68,7 +68,6 @@ function makeAuthenticatedRequest(url, options = {}) {
   return fetch(url, authOptions);
 }
 
-
 async function checkAuth() {
   if (!TokenManager.hasToken()) {
     window.location.replace('login.html');
@@ -80,9 +79,7 @@ async function checkAuth() {
 
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
-        // Only clear tokens, not remembered credentials
-        localStorage.removeItem('auth_token');
-        sessionStorage.removeItem('currentUser');
+        TokenManager.removeToken();
         window.location.replace('login.html');
         return false;
       }
@@ -91,9 +88,7 @@ async function checkAuth() {
 
     const data = await response.json();
     if (!data.success) {
-      // Only clear tokens, not remembered credentials
-      localStorage.removeItem('auth_token');
-      sessionStorage.removeItem('currentUser');
+      TokenManager.removeToken();
       window.location.replace('login.html');
       return false;
     }
@@ -101,13 +96,12 @@ async function checkAuth() {
     return true;
   } catch (error) {
     console.error('Auth check failed:', error);
-    // Only clear tokens on network/auth errors, not remembered credentials
-    localStorage.removeItem('auth_token');
-    sessionStorage.removeItem('currentUser');
+    TokenManager.removeToken();
     window.location.replace('login.html');
     return false;
   }
 }
+
 function logout() {
   TokenManager.removeToken();
   window.location.replace('login.html');
@@ -1031,30 +1025,7 @@ function initThemeToggle() {
     themeToggleBtn.addEventListener('click', toggleTheme);
   }
 }
-try {
-  const currentUser = sessionStorage.getItem("currentUser");
-  if (currentUser) {
-    const userData = JSON.parse(currentUser);
-    const usernameElement = qs(".username");
-    if (usernameElement) {
-      usernameElement.innerHTML = userData.username;
-    }
-  } else {
-    // Fallback: try to get from rememberedUser in localStorage
-    const rememberedUser = localStorage.getItem("rememberedUser");
-    if (rememberedUser) {
-      const userData = JSON.parse(rememberedUser);
-      const usernameElement = qs(".username");
-      if (usernameElement) {
-        usernameElement.innerHTML = userData.username;
-      }
-    }
-  }
-} catch (error) {
-  console.error('Failed to load username:', error);
-  // Don't redirect on this error, just log it
-}
-
+qs(".username").innerHTML = JSON.parse(sessionStorage.getItem("rememberedUser")).username
 function applyTheme(theme) {
   const html = document.documentElement;
   const darkIcon = qs(".dark-icon");
